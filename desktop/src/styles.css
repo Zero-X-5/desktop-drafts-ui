@@ -144,7 +144,7 @@ svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width:
   border-radius: 18px;
   background: rgba(255,255,255,.94);
   box-shadow: 0 20px 50px rgba(34,44,58,.12);
-  animation: none;
+  animation: reveal .16s ease-out;
 }
 
 :root[data-runtime="tauri"] .workspace.has-preview .preview { flex: 1 1 var(--preview-width); width: auto; min-width: 360px; }

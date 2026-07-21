@@ -149,8 +149,8 @@ export const desktopApi = {
       previewSide === "left" ? position.x - previewPhysicalWidth - Math.round(PREVIEW_GAP * scaleFactor) : position.x + dockPhysicalWidth + Math.round(PREVIEW_GAP * scaleFactor),
       position.y,
     ));
-    if (draftId) await previewWindow.emit("preview-draft", draftId);
     await previewWindow.show();
+    if (draftId) await previewWindow.emit("preview-draft", draftId);
     await previewWindow.emit("preview-side-changed", previewSide);
     return previewSide;
   },
