@@ -40,6 +40,9 @@ next-env.d.ts
 /dist/
 /desktop/dist/
 /desktop/src-tauri/target/
+/desktop/src-tauri/target-release-*/
+/desktop/shijian-*.exe
+/server*.log
 /.wrangler/
 /outputs/
 /work/
