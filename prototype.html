@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>拾笺 · 桌面草稿架</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20201d;
+      --muted: #77776f;
+      --panel: rgba(250, 249, 244, .86);
+      --line: rgba(54, 52, 45, .12);
+      --shadow: 0 26px 80px rgba(31, 31, 28, .18), 0 4px 18px rgba(31, 31, 28, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      min-height: 100vh;
+      overflow: hidden;
+      color: var(--ink);
+      font-family: "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 18% 15%, rgba(255,255,255,.98) 0 8%, transparent 34%),
+        radial-gradient(circle at 78% 24%, rgba(205,219,207,.78), transparent 31%),
+        linear-gradient(145deg, #d7dfd4 0%, #c3d0c4 46%, #aebfb3 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(rgba(255,255,255,.24) .65px, transparent .65px);
+      background-size: 4px 4px;
+      opacity: .28;
+    }
+
+    button, textarea, input { font: inherit; }
+
+    button { color: inherit; }
+
+    .desktop-label {
+      position: fixed;
+      top: 40px;
+      left: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(32, 39, 33, .58);
+      font-size: 13px;
+      letter-spacing: .08em;
+    }
+
+    .desktop-label::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4e6b58;
+      box-shadow: 0 0 0 5px rgba(78,107,88,.12);
+    }
+
+    .shelf {
+      position: fixed;
+      left: 50%;
+      bottom: 42px;
+      width: min(1040px, calc(100vw - 48px));
+      transform: translateX(-50%);
+      border: 1px solid rgba(255,255,255,.52);
+      border-radius: 24px;
+      background: rgba(245, 245, 239, .56);
+      box-shadow: 0 22px 65px rgba(35, 47, 37, .17), inset 0 1px 0 rgba(255,255,255,.72);
+      backdrop-filter: blur(24px) saturate(1.15);
+      user-select: none;
+    }
+
+    .shelf-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 9px 20px;
+      color: #4e514a;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; }
+
+    .brand-mark {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border-radius: 9px;
+      color: #f6f6f0;
+      background: #313b32;
+      font-family: Georgia, serif;
+      font-size: 16px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+    }
+
+    .brand strong { font-size: 14px; font-weight: 650; letter-spacing: .04em; }
+    .brand span { color: #898b83; font-size: 11px; }
+
+    .head-actions { display: flex; align-items: center; gap: 6px; }
+
+    .icon-button, .add-button {
+      display: inline-grid;
+      place-items: center;
+      border: 0;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, color .18s ease;
+    }
+
+    .icon-button {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      color: #696b65;
+      background: transparent;
+      font-size: 18px;
+    }
+
+    .icon-button:hover { background: rgba(255,255,255,.65); color: #22251f; }
+
+    .add-button {
+      grid-auto-flow: column;
+      gap: 7px;
+      min-height: 34px;
+      padding: 0 13px;
+      border-radius: 11px;
+      color: #f7f7f1;
+      background: #313b32;
+      font-size: 12px;
+      box-shadow: 0 8px 20px rgba(42,54,44,.18);
+    }
+
+    .add-button:hover { transform: translateY(-1px); background: #1f2921; }
+
+    .cards {
+      display: flex;
+      gap: 11px;
+      padding: 8px 16px 17px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .cards::-webkit-scrollbar { display: none; }
+
+    .note-card {
+      position: relative;
+      flex: 0 0 154px;
+      height: 142px;
+      padding: 17px 15px 13px;
+      overflow: hidden;
+      border: 1px solid rgba(79,74,56,.08);
+      border-radius: 8px 17px 17px 8px;
+      cursor: pointer;
+      background: var(--note, #f3e4a6);
+      box-shadow: 0 7px 18px rgba(53,52,43,.10), inset 7px 0 0 rgba(255,255,255,.18);
+      transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+    }
+
+    .note-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 28px;
+      height: 28px;
+      border-bottom-left-radius: 12px;
+      background: linear-gradient(225deg, rgba(255,255,255,.62) 0 48%, rgba(0,0,0,.05) 49% 53%, transparent 54%);
+      opacity: .72;
+    }
+
+    .note-card:hover, .note-card:focus-visible {
+      outline: none;
+      transform: translateY(-7px) rotate(-.4deg);
+      box-shadow: 0 17px 28px rgba(53,52,43,.17), inset 7px 0 0 rgba(255,255,255,.18);
+      filter: saturate(1.04);
+    }
+
+    .note-card.active { box-shadow: 0 0 0 3px rgba(49,59,50,.16), 0 17px 28px rgba(53,52,43,.17); }
+
+    .note-type {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 11px;
+      color: rgba(53,51,41,.52);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .note-type::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .note-title { margin: 0 0 8px; font-size: 14px; font-weight: 750; line-height: 1.3; }
+    .note-excerpt { margin: 0; color: rgba(42,40,34,.66); font-size: 11px; line-height: 1.65; }
+    .note-time { position: absolute; left: 15px; bottom: 11px; color: rgba(53,51,41,.44); font-size: 9px; }
+
+    .hint {
+      position: absolute;
+      left: 50%;
+      bottom: -28px;
+      transform: translateX(-50%);
+      color: rgba(39,46,40,.48);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .preview {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      display: none;
+      width: min(650px, calc(100vw - 40px));
+      max-height: calc(100vh - 260px);
+      transform: translate(-50%, -56%) scale(.97);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.8);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(32px) saturate(1.15);
+      opacity: 0;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 10;
+    }
+
+    .preview.show { display: block; }
+    .preview.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    .preview-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 14px 12px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .file-info { display: flex; align-items: center; gap: 9px; min-width: 0; }
+
+    .file-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--selected, #f0d981); box-shadow: 0 0 0 4px color-mix(in srgb, var(--selected) 30%, transparent); }
+    .file-name { overflow: hidden; font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .file-ext { color: #97978f; font-size: 10px; font-weight: 500; }
+
+    .preview-actions { display: flex; gap: 4px; }
+    .preview-actions .icon-button { width: 31px; height: 31px; font-size: 15px; }
+
+    .preview-content {
+      min-height: 250px;
+      padding: 27px 34px 30px;
+      overflow-y: auto;
+    }
+
+    .preview-content h1 { margin: 0 0 18px; font-size: clamp(23px, 3vw, 31px); letter-spacing: -.04em; }
+    .preview-content p { margin: 0; color: #565750; font-family: "Microsoft YaHei", sans-serif; font-size: 14px; line-height: 1.9; white-space: pre-wrap; }
+
+    .preview-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 20px;
+      border-top: 1px solid var(--line);
+      color: #96968e;
+      font-size: 10px;
+    }
+
+    .edit-button {
+      border: 0;
+      border-radius: 9px;
+      padding: 7px 12px;
+      color: #f5f5ef;
+      cursor: pointer;
+      background: #333c34;
+      font-size: 11px;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      background: rgba(33,40,34,.20);
+      backdrop-filter: blur(5px);
+      z-index: 20;
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+
+    .overlay.show { display: grid; place-items: center; }
+    .overlay.visible { opacity: 1; }
+
+    .editor {
+      width: min(800px, calc(100vw - 40px));
+      height: min(620px, calc(100vh - 70px));
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.76);
+      border-radius: 24px;
+      background: #f7f6f1;
+      box-shadow: 0 34px 100px rgba(21,27,22,.30);
+      transform: translateY(18px) scale(.98);
+      transition: transform .2s ease;
+    }
+
+    .overlay.visible .editor { transform: translateY(0) scale(1); }
+
+    .editor-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .window-dots { display: flex; gap: 7px; }
+    .window-dots i { width: 10px; height: 10px; border-radius: 50%; background: #d9d8d1; }
+    .window-dots i:first-child { background: #e28b7c; }
+    .window-dots i:nth-child(2) { background: #e5c265; }
+    .window-dots i:nth-child(3) { background: #7ab78a; }
+
+    .save-state { color: #8a8b84; font-size: 10px; }
+    .done-button { border: 0; border-radius: 9px; padding: 7px 14px; color: white; cursor: pointer; background: #313b32; font-size: 11px; }
+
+    .editor-body { display: flex; height: calc(100% - 61px); }
+
+    .editor-side {
+      width: 64px;
+      padding: 22px 0;
+      border-right: 1px solid var(--line);
+      background: rgba(233,232,226,.58);
+    }
+
+    .color-list { display: grid; gap: 12px; place-items: center; }
+    .color-option { width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.8); border-radius: 50%; cursor: pointer; background: var(--color); box-shadow: 0 0 0 1px rgba(0,0,0,.09); }
+    .color-option.selected { box-shadow: 0 0 0 2px #3d453e, 0 0 0 4px #f7f6f1; }
+
+    .writing { display: flex; flex: 1; flex-direction: column; padding: 39px 48px; min-width: 0; }
+
+    #titleInput {
+      width: 100%;
+      margin-bottom: 20px;
+      border: 0;
+      outline: 0;
+      color: #22231f;
+      background: transparent;
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 750;
+      letter-spacing: -.045em;
+    }
+
+    #contentInput {
+      flex: 1;
+      width: 100%;
+      resize: none;
+      border: 0;
+      outline: 0;
+      color: #50524b;
+      background: transparent;
+      font-size: 14px;
+      line-height: 1.9;
+    }
+
+    .toast {
+      position: fixed;
+      top: 28px;
+      left: 50%;
+      padding: 9px 14px;
+      border-radius: 999px;
+      color: #f8f8f4;
+      background: rgba(39,47,40,.88);
+      box-shadow: 0 8px 22px rgba(30,38,31,.18);
+      transform: translate(-50%, -15px);
+      font-size: 11px;
+      opacity: 0;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 40;
+      pointer-events: none;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 650px) {
+      .desktop-label { left: 24px; top: 25px; }
+      .shelf { bottom: 28px; width: calc(100vw - 24px); }
+      .brand span { display: none; }
+      .note-card { flex-basis: 140px; }
+      .preview { max-height: calc(100vh - 235px); }
+      .preview-content { padding: 24px; }
+      .editor-side { display: none; }
+      .writing { padding: 30px 25px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop-label">桌面 · 今天也随手记一点</div>
+
+  <main class="shelf" aria-label="桌面草稿架">
+    <header class="shelf-head">
+      <div class="brand">
+        <div class="brand-mark">拾</div>
+        <strong>拾笺</strong>
+        <span id="noteCount">4 个草稿</span>
+      </div>
+      <div class="head-actions">
+        <button class="icon-button" id="collapseButton" aria-label="收起草稿架" title="收起">⌄</button>
+        <button class="add-button" id="addButton"><span>＋</span> 新建草稿</button>
+      </div>
+    </header>
+    <section class="cards" id="cards" aria-label="草稿列表"></section>
+    <div class="hint">单击预览 · 双击直接编辑 · 内容自动保存</div>
+  </main>
+
+  <section class="preview" id="preview" aria-label="草稿预览">
+    <header class="preview-bar">
+      <div class="file-info"><span class="file-dot"></span><span class="file-name" id="previewFile"></span><span class="file-ext">.txt</span></div>
+      <div class="preview-actions">
+        <button class="icon-button" id="copyButton" aria-label="复制内容" title="复制">⧉</button>
+        <button class="icon-button" id="deleteButton" aria-label="删除草稿" title="删除">⌫</button>
+        <button class="icon-button" id="closePreview" aria-label="关闭预览" title="关闭">×</button>
+      </div>
+    </header>
+    <div class="preview-content">
+      <h1 id="previewTitle"></h1>
+      <p id="previewText"></p>
+    </div>
+    <footer class="preview-footer"><span id="previewMeta"></span><button class="edit-button" id="editButton">编辑草稿</button></footer>
+  </section>
+
+  <div class="overlay" id="overlay">
+    <section class="editor" aria-label="草稿编辑器">
+      <header class="editor-head">
+        <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="save-state" id="saveState">所有更改已保存</span>
+        <button class="done-button" id="doneButton">完成</button>
+      </header>
+      <div class="editor-body">
+        <aside class="editor-side" aria-label="便签颜色">
+          <div class="color-list" id="colorList"></div>
+        </aside>
+        <div class="writing">
+          <input id="titleInput" aria-label="草稿标题" placeholder="未命名草稿">
+          <textarea id="contentInput" aria-label="草稿内容" placeholder="从这里开始写……"></textarea>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const colors = ["#f1dfa0", "#d4e4c4", "#cbdde9", "#e7cddd", "#e8d1b5"];
+    const defaults = [
+      { id: 1, title: "周一要做的事", content: "整理需求清单\n给产品原型补两张图\n下午三点和小林同步进度", color: colors[0], updated: "刚刚" },
+      { id: 2, title: "一个产品想法", content: "把散落在桌面的 TXT 文件变成一排随手可翻的卡片。\n\n它应该安静、轻巧，并且永远不阻碍正在做的事情。", color: colors[1], updated: "12 分钟前" },
+      { id: 3, title: "会议速记", content: "重点不是增加更多功能，而是让记录这件事发生得足够自然。\n\n下一步：确认悬浮层与桌面的关系。", color: colors[2], updated: "昨天 17:42" },
+      { id: 4, title: "灵感碎片", content: "像文件夹一样排列，像纸一样可以随手写，像空气一样不打扰。", color: colors[3], updated: "周日" }
+    ];
+
+    let notes = JSON.parse(localStorage.getItem("shijian-notes") || "null") || defaults;
+    let activeId = null;
+    let clickTimer = null;
+    let saveTimer = null;
+
+    const cards = document.getElementById("cards");
+    const preview = document.getElementById("preview");
+    const overlay = document.getElementById("overlay");
+    const toast = document.getElementById("toast");
+
+    function saveNotes() {
+      localStorage.setItem("shijian-notes", JSON.stringify(notes));
+      document.getElementById("saveState").textContent = "所有更改已保存";
+    }
+
+    function activeNote() { return notes.find(note => note.id === activeId); }
+
+    function escapeText(value) {
+      const element = document.createElement("div");
+      element.textContent = value;
+      return element.innerHTML;
+    }
+
+    function renderCards() {
+      cards.innerHTML = notes.map(note => `
+        <article class="note-card ${note.id === activeId ? "active" : ""}" style="--note:${note.color}" tabindex="0" data-id="${note.id}">
+          <div class="note-type">TXT 草稿</div>
+          <h2 class="note-title">${escapeText(note.title || "未命名草稿")}</h2>
+          <p class="note-excerpt">${escapeText(note.content.replace(/\n/g, " ").slice(0, 48))}</p>
+          <time class="note-time">${escapeText(note.updated)}</time>
+        </article>`).join("");
+      document.getElementById("noteCount").textContent = `${notes.length} 个草稿`;
+    }
+
+    function selectNote(id) {
+      activeId = id;
+      const note = activeNote();
+      if (!note) return;
+      document.querySelectorAll(".note-card").forEach(card => card.classList.toggle("active", Number(card.dataset.id) === id));
+      document.getElementById("previewFile").textContent = note.title || "未命名草稿";
+      document.getElementById("previewTitle").textContent = note.title || "未命名草稿";
+      document.getElementById("previewText").textContent = note.content || "这是一张空白草稿。";
+      document.getElementById("previewMeta").textContent = `${note.content.length} 字符 · ${note.updated}`;
+      preview.style.setProperty("--selected", note.color);
+      preview.classList.add("show");
+      requestAnimationFrame(() => preview.classList.add("visible"));
+    }
+
+    function closePreview() {
+      preview.classList.remove("visible");
+      setTimeout(() => preview.classList.remove("show"), 180);
+      activeId = null;
+      renderCards();
+    }
+
+    function openEditor(id) {
+      if (id) activeId = id;
+      const note = activeNote();
+      if (!note) return;
+      document.getElementById("titleInput").value = note.title;
+      document.getElementById("contentInput").value = note.content;
+      renderColors(note.color);
+      preview.classList.remove("visible", "show");
+      overlay.classList.add("show");
+      requestAnimationFrame(() => overlay.classList.add("visible"));
+      setTimeout(() => document.getElementById("contentInput").focus(), 180);
+    }
+
+    function closeEditor() {
+      saveNotes();
+      overlay.classList.remove("visible");
+      setTimeout(() => overlay.classList.remove("show"), 200);
+      renderCards();
+    }
+
+    function renderColors(selected) {
+      document.getElementById("colorList").innerHTML = colors.map(color => `<button class="color-option ${color === selected ? "selected" : ""}" style="--color:${color}" data-color="${color}" aria-label="选择便签颜色"></button>`).join("");
+    }
+
+    function updateActive() {
+      const note = activeNote();
+      if (!note) return;
+      note.title = document.getElementById("titleInput").value;
+      note.content = document.getElementById("contentInput").value;
+      note.updated = "刚刚";
+      document.getElementById("saveState").textContent = "正在保存…";
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveNotes, 450);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1500);
+    }
+
+    cards.addEventListener("click", event => {
+      const card = event.target.closest(".note-card");
+      if (!card) return;
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => selectNote(Number(card.dataset.id)), 220);
+    });
+
+    cards.addEventListener("dblclick", event => {
+      const card = event.target.closest(".note-card");
+      if (!card) return;
+      clearTimeout(clickTimer);
+      openEditor(Number(card.dataset.id));
+    });
+
+    cards.addEventListener("keydown", event => {
+      const card = event.target.closest(".note-card");
+      if (!card) return;
+      if (event.key === "Enter") selectNote(Number(card.dataset.id));
+    });
+
+    document.getElementById("addButton").addEventListener("click", () => {
+      const note = { id: Date.now(), title: "未命名草稿", content: "", color: colors[0], updated: "刚刚" };
+      notes.unshift(note);
+      activeId = note.id;
+      saveNotes();
+      renderCards();
+      openEditor(note.id);
+    });
+
+    document.getElementById("closePreview").addEventListener("click", closePreview);
+    document.getElementById("editButton").addEventListener("click", () => openEditor());
+    document.getElementById("doneButton").addEventListener("click", closeEditor);
+    document.getElementById("titleInput").addEventListener("input", updateActive);
+    document.getElementById("contentInput").addEventListener("input", updateActive);
+
+    document.getElementById("colorList").addEventListener("click", event => {
+      const option = event.target.closest(".color-option");
+      const note = activeNote();
+      if (!option || !note) return;
+      note.color = option.dataset.color;
+      renderColors(note.color);
+      updateActive();
+    });
+
+    document.getElementById("copyButton").addEventListener("click", async () => {
+      const note = activeNote();
+      if (!note) return;
+      try { await navigator.clipboard.writeText(note.content); showToast("内容已复制"); }
+      catch { showToast("浏览器未允许复制"); }
+    });
+
+    document.getElementById("deleteButton").addEventListener("click", () => {
+      if (!activeNote() || !confirm("删除这张草稿吗？")) return;
+      notes = notes.filter(note => note.id !== activeId);
+      saveNotes();
+      closePreview();
+      showToast("草稿已删除");
+    });
+
+    document.getElementById("collapseButton").addEventListener("click", event => {
+      const shelf = document.querySelector(".shelf");
+      const collapsed = shelf.classList.toggle("collapsed");
+      cards.style.display = collapsed ? "none" : "flex";
+      event.currentTarget.textContent = collapsed ? "⌃" : "⌄";
+      document.querySelector(".hint").style.display = collapsed ? "none" : "block";
+    });
+
+    overlay.addEventListener("click", event => { if (event.target === overlay) closeEditor(); });
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      if (overlay.classList.contains("show")) closeEditor();
+      else if (preview.classList.contains("show")) closePreview();
+    });
+
+    renderCards();
+  </script>
+</body>
+</html>
