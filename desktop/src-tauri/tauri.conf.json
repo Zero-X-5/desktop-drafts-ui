@@ -22,21 +22,7 @@
         "transparent": true,
         "shadow": false,
         "resizable": true,
-        "shadow": false,
         "skipTaskbar": true,
-        "alwaysOnTop": false
-      },
-      {
-        "label": "preview",
-        "title": "拾笺预览",
-        "url": "index.html?preview=1",
-        "width": 500,
-        "height": 640,
-        "decorations": false,
-        "transparent": true,
-        "resizable": true,
-        "skipTaskbar": true,
-        "visible": false,
         "alwaysOnTop": false
       }
     ],

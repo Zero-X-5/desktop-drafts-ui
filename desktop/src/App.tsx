@@ -10,10 +10,8 @@ import type { Draft, PreviewSide, ThemeMode } from "./types";
 const THEME_KEY = "shijian-theme-mode";
 const PIN_KEY = "shijian-pinned";
 const TRANSPARENCY_KEY = "shijian-reduced-transparency-v2";
-const PREVIEW_WINDOW = new URLSearchParams(window.location.search).get("preview") === "1";
 
 export default function App() {
-  if (PREVIEW_WINDOW) return <PreviewWindowApp />;
   const [drafts, setDrafts] = useState<Draft[]>(draftApi.isNative ? [] : initialDrafts);
   const [draftDirectory, setDraftDirectory] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -42,8 +40,6 @@ export default function App() {
   useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
-    let unlistenPreview: (() => void) | undefined;
-    let unlistenPreviewDeleted: (() => void) | undefined;
     void desktopApi.initialize().then(async () => {
       await desktopApi.setAlwaysOnTop(pinned);
       if (!draftApi.isNative) return;
@@ -61,22 +57,9 @@ export default function App() {
       if (disposed) stopListening();
       else unlisten = stopListening;
     });
-    void desktopApi.onPreviewSideChange(setPreviewSide).then((stopListening) => {
-      if (disposed) stopListening();
-      else unlistenPreview = stopListening;
-    });
-    void desktopApi.onPreviewDraftDeleted((draftId) => {
-      setDrafts((currentDrafts) => currentDrafts.filter((draft) => draft.id !== draftId));
-      setActiveId((currentId) => currentId === draftId ? null : currentId);
-    }).then((stopListening) => {
-      if (disposed) stopListening();
-      else unlistenPreviewDeleted = stopListening;
-    });
     return () => {
       disposed = true;
       unlisten?.();
-      unlistenPreview?.();
-      unlistenPreviewDeleted?.();
     };
   }, []);
 
@@ -123,7 +106,7 @@ export default function App() {
         setDrafts((currentDrafts) => currentDrafts.map((draft) => draft.id === draftId ? document : draft));
       }
       setActiveId(draftId);
-      setPreviewSide(await desktopApi.showPreview(draftId));
+      setPreviewSide(await desktopApi.showPreview());
     } catch (error) {
       setToast(errorMessage(error));
     }
@@ -332,7 +315,7 @@ export default function App() {
           onThemeModeChange={setThemeMode}
         />
       </aside>
-      {!desktopApi.isNative && activeDraft && <Preview draft={activeDraft} onClose={closePreview} onCopy={copyDraft} onDelete={deleteDraft} onContentChange={(content) => updatePreviewContent(activeDraft.id, content)} onContentBlur={() => void savePreviewContent(activeDraft.id)} onTitleChange={(title) => updatePreviewTitle(activeDraft.id, title)} onTitleBlur={() => void savePreviewTitle(activeDraft.id)} />}
+      {activeDraft && <Preview draft={activeDraft} onClose={closePreview} onCopy={copyDraft} onDelete={deleteDraft} onContentChange={(content) => updatePreviewContent(activeDraft.id, content)} onContentBlur={() => void savePreviewContent(activeDraft.id)} onTitleChange={(title) => updatePreviewTitle(activeDraft.id, title)} onTitleBlur={() => void savePreviewTitle(activeDraft.id)} />}
       {contextMenu && <ContextMenu menu={contextMenu} onCopy={copyDraft} onDelete={deleteDraft} onPreview={selectDraft} onRename={(draftId) => { setContextMenu(null); setRenamingId(draftId); }} />}
       {toast && <div className="toast" role="status">{toast}</div>}
     </main>
@@ -347,36 +330,6 @@ function Preview({ draft, onClose, onCopy, onDelete, onContentChange, onContentB
       <footer><span>标题与正文可直接编辑</span><span>{draft.content.length} 字符 · .txt</span></footer>
     </section>
   );
-}
-
-function PreviewWindowApp() {
-  const [draft, setDraft] = useState<Draft | null>(null);
-
-  useEffect(() => {
-    document.documentElement.dataset.runtime = "tauri";
-    const themeMode = localStorage.getItem(THEME_KEY) as ThemeMode | null;
-    const systemDark = matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.dataset.theme = themeMode === "dark" || (themeMode !== "light" && systemDark) ? "dark" : "light";
-    document.documentElement.classList.toggle("reduced-transparency", localStorage.getItem(TRANSPARENCY_KEY) !== "false");
-    void desktopApi.initializePreviewWindow();
-    let unlisten: (() => void) | undefined;
-    void desktopApi.onPreviewDraft((draftId) => {
-      void draftApi.read(draftId).then(setDraft).catch(() => setDraft(null));
-    }).then((stopListening) => { unlisten = stopListening; });
-    return () => unlisten?.();
-  }, []);
-
-  if (!draft) return <main className="preview-window-shell" />;
-  const updateDraft = (changes: Partial<Draft>) => setDraft((current) => current ? { ...current, ...changes } : current);
-  const saveContent = async () => { const saved = await draftApi.save(draft.id, draft.content); setDraft(saved); };
-  const saveTitle = async () => {
-    const title = draft.title.trim().replace(/\.txt$/i, "").trim();
-    if (!title) return;
-    const renamed = await draftApi.rename(draft.id, title);
-    setDraft(renamed);
-  };
-  const deleteCurrent = async () => { const deletedId = draft.id; await draftApi.trash(deletedId); setDraft(null); await desktopApi.notifyPreviewDeleted(deletedId); await desktopApi.hidePreview(); };
-  return <main className="preview-window-shell"><Preview draft={draft} onClose={() => void desktopApi.hidePreview()} onCopy={async (id) => { const current = await draftApi.read(id); await navigator.clipboard.writeText(current.content); }} onDelete={() => void deleteCurrent()} onContentChange={(content) => updateDraft({ content, size: content.length })} onContentBlur={() => void saveContent()} onTitleChange={(title) => updateDraft({ title })} onTitleBlur={() => void saveTitle()} /></main>;
 }
 
 interface ContextMenuProps {
