@@ -2,36 +2,51 @@ const state = {
   topmost: true,
   expanded: false,
   previewSide: localStorage.getItem('shijian-preview-side') || 'left',
-  activeNote: 0
+  activeNote: 0,
+  notes: []
 };
-
-const notes = [
-  { id: 0, title: '欢迎使用拾笺', preview: '快速记录你的想法', content: '这是拾笺桌面版。' },
-  { id: 1, title: '项目计划', preview: '下一步开发任务', content: '完善文件系统和快捷键。' }
-];
 
 const app = document.getElementById('app');
 
+async function loadNotes(){
+  state.notes = await window.shijian?.loadNotes?.() || [
+    {id:0,title:'欢迎使用拾笺',preview:'快速记录你的想法',content:''}
+  ];
+  if(!state.notes.length){
+    state.notes=[{id:0,title:'新建草稿',preview:'开始记录',content:''}];
+  }
+  render();
+}
+
+function currentNote(){
+  return state.notes[state.activeNote] || state.notes[0];
+}
+
 function render(){
-  app.innerHTML = `
-  <div class="shijian-shell ${state.expanded ? 'expanded' : ''} ${state.previewSide === 'left' ? 'preview-left':'preview-right'}">
+  const note=currentNote();
+
+  app.innerHTML=`
+  <div class="shijian-shell ${state.expanded?'expanded':''} ${state.previewSide==='left'?'preview-left':'preview-right'}">
     <div class="shijian-window">
       <div class="brand">✦ 拾笺</div>
       <div class="actions">
-        <button id="topmost">${state.topmost ? '📌':'📍'}</button>
-        <button id="expand">${state.expanded ? '−':'＋'}</button>
+        <button id="topmost">${state.topmost?'📌':'📍'}</button>
+        <button id="new">＋</button>
+        <button id="expand">${state.expanded?'−':'＋'}</button>
       </div>
     </div>
-    ${state.expanded ? `
+    ${state.expanded?`
     <div class="workspace">
       <aside class="draft-list">
-        ${notes.map(n=>`<div class="note ${n.id===state.activeNote?'active':''}" data-id="${n.id}">
-          <div>${n.title}</div><small>${n.preview}</small>
+        ${state.notes.map((n,i)=>`
+        <div class="note ${i===state.activeNote?'active':''}" data-id="${i}">
+          <div>${n.title||'无标题'}</div>
+          <small>${n.preview||''}</small>
         </div>`).join('')}
       </aside>
       <main class="editor">
-        <h3>${notes[state.activeNote].title}</h3>
-        <textarea>${notes[state.activeNote].content}</textarea>
+        <h3>${note?.title||''}</h3>
+        <textarea id="editor">${note?.content||''}</textarea>
       </main>
     </div>`:''}
   </div>`;
@@ -47,12 +62,26 @@ function render(){
     render();
   };
 
+  document.getElementById('new').onclick=async()=>{
+    await window.shijian?.createNote?.();
+    await loadNotes();
+  };
+
   document.querySelectorAll('.note').forEach(el=>{
     el.onclick=()=>{
       state.activeNote=Number(el.dataset.id);
       render();
     };
   });
+
+  const editor=document.getElementById('editor');
+  if(editor){
+    editor.oninput=()=>{
+      const n=currentNote();
+      n.content=editor.value;
+      window.shijian?.saveNote?.(n);
+    };
+  }
 }
 
 const style=document.createElement('style');
@@ -70,4 +99,4 @@ body{margin:0;background:transparent;font-family:-apple-system,BlinkMacSystemFon
 `;
 document.head.appendChild(style);
 
-render();
+loadNotes();
