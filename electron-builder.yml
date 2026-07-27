@@ -5,8 +5,10 @@ directories:
 files:
   - electron/**/*
   - src/**/*
+  - assets/**/*
   - package.json
 win:
+  icon: assets/icon.ico
   target:
     - nsis
   artifactName: ${productName}-Setup-${version}.${ext}
