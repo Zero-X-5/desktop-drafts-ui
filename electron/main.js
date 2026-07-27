@@ -1,5 +1,6 @@
-import { app, BrowserWindow, screen } from 'electron';
+import { app, BrowserWindow, screen, ipcMain } from 'electron';
 import path from 'node:path';
+import { readNotes, saveNote, createNote } from './drafts-store.js';
 
 let win;
 
@@ -26,6 +27,14 @@ function createWindow() {
 
   win.loadFile('src/shijian-desktop.html');
 }
+
+ipcMain.handle('set-topmost', (_, value) => {
+  win?.setAlwaysOnTop(Boolean(value));
+});
+
+ipcMain.handle('load-notes', () => readNotes());
+ipcMain.handle('save-note', (_, note) => saveNote(note));
+ipcMain.handle('create-note', () => createNote());
 
 app.whenReady().then(createWindow);
 
