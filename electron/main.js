@@ -1,6 +1,6 @@
 import { app, BrowserWindow, screen, ipcMain } from 'electron';
 import path from 'node:path';
-import { readNotes, saveNote, createNote } from './drafts-store.js';
+import { readNotes, saveNote, createNote, watchNotes } from './drafts-store.js';
 
 let win;
 
@@ -26,6 +26,10 @@ function createWindow() {
   });
 
   win.loadFile('src/shijian-desktop.html');
+
+  watchNotes((change)=>{
+    win?.webContents.send('notes-changed', change);
+  });
 }
 
 ipcMain.handle('set-topmost', (_, value) => {
