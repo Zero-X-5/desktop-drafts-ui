@@ -6,11 +6,16 @@ contextBridge.exposeInMainWorld('shijian', {
   },
   loadNotes() {
     return ipcRenderer.invoke('load-notes');
-  },
-  saveNote(note) {
+  },\n  saveNote(note) {
     return ipcRenderer.invoke('save-note', note);
   },
   createNote() {
     return ipcRenderer.invoke('create-note');
+  },
+  toggleWindow() {
+    return ipcRenderer.invoke('toggle-window');
+  },
+  onNotesChanged(callback) {
+    ipcRenderer.on('notes-changed', (_, data) => callback(data));
   }
 });
