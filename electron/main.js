@@ -24,7 +24,7 @@ function createWindow() {
     }
   });
 
-  win.loadFile('design-assets/shijian-ui-reference.html');
+  win.loadFile('src/shijian-desktop.html');
 }
 
 app.whenReady().then(createWindow);
