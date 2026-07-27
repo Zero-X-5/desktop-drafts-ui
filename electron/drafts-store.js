@@ -8,6 +8,11 @@ function ensureFolder(){
   if(!fs.existsSync(folder)) fs.mkdirSync(folder, {recursive:true});
 }
 
+function getTitle(content, fallback='新建草稿'){
+  const firstLine = (content || '').split(/\r?\n/)[0].trim();
+  return firstLine.slice(0,40) || fallback;
+}
+
 function readNotes(){
   ensureFolder();
   return fs.readdirSync(folder)
@@ -17,17 +22,28 @@ function readNotes(){
       const content = fs.readFileSync(filePath,'utf8');
       return {
         id:index,
-        title: file.replace('.txt',''),
-        preview: content.slice(0,40),
+        title:file.replace('.txt',''),
+        preview:content.slice(0,80),
         content,
-        path:filePath
+        path:filePath,
+        modified:fs.statSync(filePath).mtimeMs
       };
-    });
+    })
+    .sort((a,b)=>b.modified-a.modified);
 }
 
 function saveNote(note){
   ensureFolder();
-  const filePath = note.path || path.join(folder, `${note.title || 'untitled'}.txt`);
+  let filePath = note.path || path.join(folder, `${getTitle(note.content, note.title)}.txt`);
+
+  const newTitle = getTitle(note.content, note.title);
+  const renamedPath = path.join(folder, `${newTitle}.txt`);
+
+  if(filePath !== renamedPath && !fs.existsSync(renamedPath)){
+    if(fs.existsSync(filePath)) fs.renameSync(filePath, renamedPath);
+    filePath = renamedPath;
+  }
+
   fs.writeFileSync(filePath, note.content || '', 'utf8');
   return filePath;
 }
@@ -39,4 +55,11 @@ function createNote(){
   return filePath;
 }
 
-module.exports={readNotes,saveNote,createNote};
+function watchNotes(callback){
+  ensureFolder();
+  return fs.watch(folder, {recursive:false}, (event, filename)=>{
+    if(filename && filename.endsWith('.txt')) callback({event, filename});
+  });
+}
+
+module.exports={readNotes,saveNote,createNote,watchNotes};
