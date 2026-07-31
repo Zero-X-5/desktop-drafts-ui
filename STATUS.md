@@ -1,7 +1,8 @@
 # STATUS
 
 > 最后更新：2026-07-31  
-> 当前分支：`agent/minimal-electron-desktop-shell`
+> 当前分支：`agent/minimal-electron-desktop-shell`  
+> 草稿 PR：`#2 feat: add minimal Electron desktop preview shell`
 
 ## 当前阶段
 
