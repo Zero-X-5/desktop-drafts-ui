@@ -1,0 +1,18 @@
+{
+  "name": "desktop-drafts-ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "拾笺 HTML 原型的最小 Electron 桌面效果验证壳",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "check": "node --check main.js && node --check preload.js && node --check app.js"
+  },
+  "devDependencies": {
+    "electron": "43.2.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
