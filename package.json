@@ -7,7 +7,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
-    "check": "node --check main.js && node --check preload.js && node --check app.js"
+    "check": "node --check main.js && node --check preload.js && node --check app.js && node --check scripts/core.js && node --check scripts/desktop-fixes.js && node --check scripts/window.js && node --check scripts/ui.js"
   },
   "devDependencies": {
     "electron": "43.2.0"
