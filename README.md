@@ -1,98 +1,57 @@
-# vinext-starter
+# desktop-drafts-ui
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+拾笺 HTML 原型的最小 Electron 桌面效果验证壳。
 
-## Prerequisites
+当前目标不是交付完整草稿应用，而是让现有界面在真实无边框桌面窗口中运行，优先验证视觉材质、真实拖动、展开收起和预览左右换边是否与 HTML 原型一致。
+
+## 当前能力
+
+- Electron 无边框透明窗口直接加载现有 HTML、CSS 和 JavaScript
+- Windows 11 优先启用 Acrylic，不支持时自动使用透明 CSS 回退
+- 收起、目录、左侧预览和右侧预览四种真实窗口布局
+- 目录页作为屏幕坐标锚点，预览换边时目录不交换、不跳动
+- 真实窗口最小化和保持在最前
+- 通过 preload 暴露最小窗口 API，渲染层关闭 Node.js 访问
+
+草稿内容目前仍是内存中的示例数据，不会写入本地 TXT。详细进度与人工验收步骤见 [`STATUS.md`](./STATUS.md)。
+
+## 项目结构
+
+```text
+package.json       Electron 依赖与运行命令
+main.js            BrowserWindow、窗口布局和系统能力
+preload.js         安全的最小 IPC 接口
+index.html         原型 DOM 与 SVG 图标
+styles.css         原型视觉和桌面窗口适配
+app.js             原型交互和窗口布局状态
+STATUS.md          当前进度、限制与接续入口
+DESIGN_SYSTEM.md   尺寸、材质和预览锚点基线
+```
+
+## 环境要求
 
 - Node.js `>=22.13.0`
+- Windows 11 推荐 22H2 或更高版本，以测试系统 Acrylic 材质
 
-## Quick Start
+## 本地运行
 
 ```bash
 npm install
-npm run dev
-npm run build
+npm start
 ```
 
-This starter does not use `wrangler.jsonc`.
+只做静态语法检查：
 
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm run check
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## 当前范围
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+第一阶段只验证真实桌面效果，不包含：
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+- TXT 文件持久化
+- 系统托盘和全局快捷键
+- 开机启动
+- 安装包、签名和自动更新
+- 目录监听和外部修改冲突处理
