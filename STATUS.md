@@ -20,7 +20,9 @@
 - 通过 preload 只暴露窗口上下文、布局、置顶、最小化和移动通知接口。
 - 收起状态使用 `248 × 36`；目录状态使用 `248 × 480`；预览状态使用 `720 × 480`。
 - 预览换边以目录页为屏幕坐标锚点：目录不交换，只有预览页切换左右侧。
+- 修正 Electron 248px 窗口误触发原型 48px 移动端目录宽度的问题。
 - 将模拟桌面背景和任务栏隐藏，真实透明区域直接显示桌面内容。
+- 保留 `styles.css` 和 `app.js` 作为稳定入口；具体实现拆分到 `styles/` 和 `scripts/`。
 - 补充 `DESIGN_SYSTEM.md`，固定窗口尺寸、目录锚点和动效规则。
 
 ## 尚未实现
@@ -36,10 +38,11 @@
 
 已完成：
 
-- `main.js`、`preload.js`、`app.js` 的 `node --check` 语法检查。
+- `main.js`、`preload.js`、`app.js` 和 `scripts/` 下全部 JavaScript 的 `node --check` 语法检查。
 - `package.json` JSON 解析检查。
 - HTML 本地资源引用检查。
 - 确认渲染代码不再依赖 Tauri 包或 API。
+- 检查主进程 IPC 的窗口尺寸与坐标参数边界。
 
 当前环境未执行：
 
