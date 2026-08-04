@@ -99,9 +99,10 @@ async function resizeWindow() {
 // 动画期间 Rgn 扩到全窗口，transitionend 后收缩到目标区域。
 async function applyPreviewSide(side) {
   previewSide = side;
+  // 先扩 Rgn 到全窗口，再切 class 触发动画，保证整个滑动过程不被旧 Rgn 裁剪
+  await invoke('set_window_region', { state: 'full' }).catch(() => {});
   appEl.classList.toggle('preview-left', side === 'left');
   appEl.classList.toggle('preview-right', side === 'right');
-  await invoke('set_window_region', { state: 'full' }).catch(() => {});
   const editorPanel = document.querySelector('.editor-panel');
   const onEnd = (e) => {
     if (e.propertyName === 'transform') {
@@ -395,13 +396,12 @@ async function closePreview() {
   flushSave();
   if (!isPreviewOpen()) return;
   clearTimeout(previewCloseTimer);
+  // editor 向回滑出屏、toolbar 同步缩短（240ms），完成后先收缩 Rgn 再切背景，避免瞬裁闪烁
   appEl.classList.add('preview-closing');
-  appEl.classList.remove('preview-mode', 'preview-left', 'preview-right');
+  await new Promise(r => setTimeout(r, 260));
   expandedShell.classList.remove('preview-open');
   await resizeWindow();
-  previewCloseTimer = setTimeout(() => {
-    appEl.classList.remove('preview-closing');
-  }, 230);
+  appEl.classList.remove('preview-mode', 'preview-left', 'preview-right', 'preview-closing');
 }
 
 async function hideApp() {
