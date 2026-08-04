@@ -883,31 +883,36 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
   display: none !important;
 }
 
-/* 目录表面：固定 x=472，近不透明可读 */
+/* 目录表面：固定 x=472，与编辑同色、紧贴，圆角只在合并块外侧 */
 .app-window.preview-mode .directory-view {
   left: 472px !important;
   right: auto !important;
   width: 248px !important;
   z-index: 2;
   background: var(--preview-directory-bg);
-  border-radius: 14px;
+  border-radius: 14px 0 0 14px;   /* preview-right：目录在合并块左缘 */
   padding-top: 34px;
 }
+.app-window.preview-left .directory-view {
+  border-radius: 0 14px 14px 0;   /* preview-left：目录在合并块右缘 */
+}
 
-/* 编辑表面：transform 滑动，近不透明可读 */
+/* 编辑表面：与目录同色、紧贴无间隙，圆角只在合并块外侧 */
 .app-window.preview-mode .editor-panel {
   left: 0 !important;
   right: auto !important;
   width: 472px !important;
   z-index: 1;
-  background: var(--preview-editor-bg);
-  border-radius: 14px;
+  background: var(--preview-directory-bg);
+  border-radius: 0 14px 14px 0;   /* preview-right：编辑在合并块右缘 */
 }
 .app-window.preview-left .editor-panel {
   transform: translateX(0) !important;
+  border-radius: 14px 0 0 14px;   /* preview-left：编辑在合并块左缘 */
 }
 .app-window.preview-right .editor-panel {
   transform: translateX(720px) !important;
+  border-radius: 0 14px 14px 0;
 }
 
 /* 工具栏固定到目录表面（不再横跨 1192） */
