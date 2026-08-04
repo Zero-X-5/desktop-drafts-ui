@@ -952,3 +952,17 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
 .no-preview-transition {
   transition: none !important;
 }
+
+/* 方案2：打开预览时遮罩盖住窗口，resize 中间帧不可见，就位后淡出 */
+.app-window.preview-opening::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: var(--preview-directory-bg);
+  pointer-events: none;
+  transition: opacity 150ms ease;
+}
+.app-window.preview-opening.preview-ready::after {
+  opacity: 0;
+}

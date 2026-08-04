@@ -358,6 +358,9 @@ async function openPreview(id, focusEditor = false) {
   }
   clearTimeout(previewCloseTimer);
   appEl.classList.remove('preview-closing');
+  // 方案2：先铺遮罩盖住窗口，resize 中间帧不可见
+  appEl.classList.add('preview-opening');
+  void appEl.offsetWidth; // 强制渲染遮罩
   // 首次展开：按屏幕距离选方向（编辑放在不会超出屏幕边缘的一侧）
   let side = 'right';
   try {
@@ -372,7 +375,7 @@ async function openPreview(id, focusEditor = false) {
     }
   } catch (e) {}
   previewSide = side;
-  // 第 1 步：先 resize 到 1192 + 左移保持目录屏幕位置（目录仍是展开态在窗口 0，不跳、不溢出窗口）
+  // 第 1 步：resize 到 1192 + 左移保持目录屏幕（遮罩后，用户不可见中间帧）
   const monitor = await currentMonitor();
   const scale = monitor ? monitor.scaleFactor : 1;
   const pos = await win.outerPosition();
@@ -380,7 +383,7 @@ async function openPreview(id, focusEditor = false) {
   const newX = dirScreenLeft - DIR_CENTER * scale;
   await win.setSize(new LogicalSize(WINDOW_SIZE.preview.w, WINDOW_SIZE.preview.h));
   if (newX !== pos.x) await win.setPosition(new PhysicalPosition(newX, pos.y));
-  // 第 2 步：下一帧加预览类——目录从 0 平滑滑到 472，编辑器无过渡直接定位目标侧
+  // 第 2 步：下一帧加预览类——目录平滑滑到 472，编辑器无过渡直接定位目标侧
   requestAnimationFrame(() => {
     const editorPanel = document.querySelector('.editor-panel');
     editorPanel.classList.add('no-preview-transition');
@@ -390,6 +393,9 @@ async function openPreview(id, focusEditor = false) {
     expandedShell.classList.add('preview-open');
     requestAnimationFrame(() => {
       editorPanel.classList.remove('no-preview-transition');
+      // 预览就位，遮罩淡出
+      appEl.classList.add('preview-ready');
+      setTimeout(() => appEl.classList.remove('preview-opening', 'preview-ready'), 220);
       if (focusEditor) editor.focus();
     });
   });
