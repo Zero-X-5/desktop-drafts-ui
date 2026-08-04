@@ -984,6 +984,14 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
   width: 248px;
   z-index: 4;
 }
+/* 展开态：内容区从工具栏下方填满窗口，目录(472)完整显示 */
+.app-window.expanded:not(.preview-mode) .window-content {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
 .collapsed-bar {
   left: 472px !important;
   right: auto !important;

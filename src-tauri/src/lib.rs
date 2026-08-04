@@ -195,22 +195,25 @@ fn set_window_region(app: tauri::AppHandle, state: String) -> Result<(), String>
     let window = app.get_webview_window("main").ok_or("no window")?;
     let hwnd = window.hwnd().map_err(|e| e.to_string())?;
     let scale = window.scale_factor().map_err(|e| e.to_string())?;
-    // 逻辑坐标 → 物理像素（窗口 client 坐标）
-    let (lx, ly, lw, lh) = match state.as_str() {
-        "collapsed" => (472.0, 0.0, 248.0, 36.0),
-        "expanded" => (472.0, 0.0, 248.0, 480.0),
-        "preview-right" => (472.0, 0.0, 720.0, 480.0),
-        "preview-left" => (0.0, 0.0, 720.0, 480.0),
-        "full" => (0.0, 0.0, 1192.0, 480.0),
+    // 逻辑坐标 → 物理像素（窗口 client 坐标）；radius 为圆角（逻辑）
+    let (lx, ly, lw, lh, radius) = match state.as_str() {
+        "collapsed" => (472.0, 0.0, 248.0, 36.0, 10.0),
+        "expanded" => (472.0, 0.0, 248.0, 480.0, 14.0),
+        "preview-right" => (472.0, 0.0, 720.0, 480.0, 14.0),
+        "preview-left" => (0.0, 0.0, 720.0, 480.0, 14.0),
+        "full" => (0.0, 0.0, 1192.0, 480.0, 0.0),
         _ => return Err("bad state".into()),
     };
     let x = (lx * scale) as i32;
     let y = (ly * scale) as i32;
     let w = (lw * scale) as i32;
     let h = (lh * scale) as i32;
+    let r = (radius * scale) as i32;
+    let rw = r * 2; // CreateRoundRectRgn 的圆角参数是椭圆宽高
+    let rh = r * 2;
     unsafe {
         let hwnd_ptr = hwnd.0 as *mut c_void;
-        let rgn = CreateRectRgn(x, y, x + w, y + h);
+        let rgn = CreateRoundRectRgn(x, y, x + w, y + h, rw, rh);
         if !rgn.is_null() {
             SetWindowRgn(hwnd_ptr, rgn, 1);
         }
@@ -222,7 +225,7 @@ fn set_window_region(app: tauri::AppHandle, state: String) -> Result<(), String>
 #[link(name = "user32")]
 extern "system" {
     fn SetWindowRgn(hwnd: *mut std::ffi::c_void, hrgn: *mut std::ffi::c_void, bredraw: i32) -> i32;
-    fn CreateRectRgn(l: i32, t: i32, r: i32, b: i32) -> *mut std::ffi::c_void;
+    fn CreateRoundRectRgn(l: i32, t: i32, r: i32, b: i32, w: i32, h: i32) -> *mut std::ffi::c_void;
 }
 
 #[cfg(not(target_os = "windows"))]
