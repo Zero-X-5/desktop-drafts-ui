@@ -858,29 +858,78 @@ html[data-theme="light"] body.transparent-on .app-window.expanded.preview-mode {
   background: var(--surface);
 }
 
-/* ===== 1192 轨道窗口（原型）：目录恒居中，编辑 CSS transform 滑动，不移动窗口 ===== */
+/* ===== 1192 轨道窗口：透明舞台 + 目录/编辑两个独立可读表面 ===== */
+/* 预览模式专用近不透明背景变量（不用普通玻璃的浅透明值） */
+:root {
+  --preview-directory-bg: rgba(242, 243, 248, 0.97);
+  --preview-editor-bg: rgba(247, 248, 251, 0.985);
+}
+html[data-theme="dark"] {
+  --preview-directory-bg: rgba(29, 32, 41, 0.96);
+  --preview-editor-bg: rgba(23, 26, 34, 0.98);
+}
+
+/* 舞台本身完全不绘制：透明背景、无模糊、无阴影、无圆角、无边框 */
 .app-window.expanded.preview-mode,
 html[data-theme="light"] .app-window.expanded.preview-mode {
   width: 1192px !important;
   background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
+.app-window.preview-mode::before {
+  display: none !important;
+}
+
+/* 目录表面：固定 x=472，近不透明可读 */
 .app-window.preview-mode .directory-view {
   left: 472px !important;
   right: auto !important;
   width: 248px !important;
   z-index: 2;
-  background: var(--glass-strong);
+  background: var(--preview-directory-bg);
+  border-radius: 14px;
+  padding-top: 34px;
 }
+
+/* 编辑表面：transform 滑动，近不透明可读 */
 .app-window.preview-mode .editor-panel {
   left: 0 !important;
   right: auto !important;
   width: 472px !important;
   z-index: 1;
-  background: var(--surface);
+  background: var(--preview-editor-bg);
+  border-radius: 14px;
 }
 .app-window.preview-left .editor-panel {
   transform: translateX(0) !important;
 }
 .app-window.preview-right .editor-panel {
   transform: translateX(720px) !important;
+}
+
+/* 工具栏固定到目录表面（不再横跨 1192） */
+.app-window.preview-mode .expanded-shell {
+  display: block;
+  border-radius: 0 !important;
+}
+.app-window.preview-mode .window-content {
+  position: absolute;
+  inset: 0;
+}
+.app-window.preview-mode .window-toolbar {
+  position: absolute;
+  left: 472px;
+  top: 0;
+  width: 248px;
+  z-index: 4;
+}
+/* 设置弹层跟随工具栏（目录表面），不再掉进轨道边缘 */
+.app-window.preview-mode .settings-popover {
+  left: 472px;
+  right: auto;
+  top: 34px;
+  width: 276px;
 }
