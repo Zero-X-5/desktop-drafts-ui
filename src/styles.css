@@ -857,3 +857,29 @@ html[data-theme="light"] body.transparent-on .app-window.expanded.preview-mode {
 .editor-panel {
   background: var(--surface);
 }
+
+/* ===== 1192 轨道窗口（原型）：目录恒居中，编辑 CSS transform 滑动，不移动窗口 ===== */
+.app-window.expanded.preview-mode {
+  width: 1192px !important;
+  background: transparent !important;
+}
+.app-window.preview-mode .directory-view {
+  left: 472px !important;
+  right: auto !important;
+  width: 248px !important;
+  z-index: 2;
+  background: var(--glass-strong);
+}
+.app-window.preview-mode .editor-panel {
+  left: 0 !important;
+  right: auto !important;
+  width: 472px !important;
+  z-index: 1;
+  background: var(--surface);
+}
+.app-window.preview-left .editor-panel {
+  transform: translateX(0) !important;
+}
+.app-window.preview-right .editor-panel {
+  transform: translateX(720px) !important;
+}

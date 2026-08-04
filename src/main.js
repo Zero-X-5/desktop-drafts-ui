@@ -62,8 +62,11 @@ let settings = {
 const WINDOW_SIZE = {
   collapsed: { w: 248, h: 36 },
   expanded: { w: 248, h: 480 },
-  preview: { w: 720, h: 480 },
+  preview: { w: 1192, h: 480 },
 };
+const DIR_W = 248;      // 目录宽（逻辑）
+const DIR_CENTER = 472; // 目录在 1192 轨道窗口中的左侧偏移（= 编辑区宽）
+const EDIT_W = 472;     // 编辑区宽（逻辑）
 
 // ==================== helpers ====================
 function iconUse(id) { return `<svg><use href="#${id}"/></svg>`; }
@@ -85,63 +88,23 @@ async function resizeWindow() {
   const preview = isPreviewOpen();
   const expanded = appEl.classList.contains('expanded');
   const size = preview ? WINDOW_SIZE.preview : (expanded ? WINDOW_SIZE.expanded : WINDOW_SIZE.collapsed);
-  await win.setSize(new LogicalSize(size.w, size.h));
-  if (preview) await keepDirLeft();
-}
-
-// 预览展开时保持目录左缘的屏幕位置不变（目录固定在窗口一侧）
-async function keepDirLeft() {
-  try {
-    const monitor = await currentMonitor();
-    const scale = monitor ? monitor.scaleFactor : 1;
-    const dirLeft = await getDirLeftPhysical();
-    const pos = await win.outerPosition();
-    const w = WINDOW_SIZE.preview.w * scale;
-    const x = previewSide === 'right' ? dirLeft : dirLeft - (w - WINDOW_SIZE.expanded.w * scale);
-    if (x !== pos.x) await win.setPosition(new PhysicalPosition(x, pos.y));
-  } catch (e) {}
-}
-
-async function getDirLeftPhysical() {
   const monitor = await currentMonitor();
   const scale = monitor ? monitor.scaleFactor : 1;
   const pos = await win.outerPosition();
-  if (previewSide === 'right') return pos.x;
-  return pos.x + (WINDOW_SIZE.preview.w - WINDOW_SIZE.expanded.w) * scale;
+  const curW = (await win.outerSize()).width;
+  // 转换前目录屏幕左缘：窗口已是 1192 宽则目录居中（DIR_CENTER），否则目录在窗口左缘
+  const isWide = curW > WINDOW_SIZE.expanded.w * scale + 1;
+  const dirScreenLeft = isWide ? pos.x + DIR_CENTER * scale : pos.x;
+  await win.setSize(new LogicalSize(size.w, size.h));
+  const newX = preview ? dirScreenLeft - DIR_CENTER * scale : dirScreenLeft;
+  if (newX !== pos.x) await win.setPosition(new PhysicalPosition(newX, pos.y));
 }
 
-// 应用预览方向：目录位置不变，编辑区切到另一侧
+// 交换方向：目录不动，只切换编辑区 CSS transform（窗口不移动）
 async function applyPreviewSide(side) {
-  try {
-    const monitor = await currentMonitor();
-    if (!monitor) return;
-    const scale = monitor.scaleFactor;
-    const dirLeft = await getDirLeftPhysical();
-    const pos = await win.outerPosition();
-    previewSide = side;
-    appEl.classList.toggle('preview-left', side === 'left');
-    appEl.classList.toggle('preview-right', side === 'right');
-    const w = WINDOW_SIZE.preview.w * scale;
-    const x = side === 'right' ? dirLeft : dirLeft - (w - WINDOW_SIZE.expanded.w * scale);
-    await win.setPosition(new PhysicalPosition(x, pos.y));
-  } catch (e) {}
-}
-
-// 屏幕边缘避让：预览展开后若窗口右缘/左缘超出当前显示器，平移回界内
-async function avoidScreenEdge() {
-  try {
-    const monitor = await currentMonitor();
-    if (!monitor) return;
-    const size = await win.outerSize();
-    const pos = await win.outerPosition();
-    let x = pos.x;
-    const mRight = monitor.position.x + monitor.size.width;
-    if (x + size.width > mRight) x = mRight - size.width;
-    if (x < monitor.position.x) x = monitor.position.x;
-    if (x !== pos.x) {
-      await win.setPosition(new PhysicalPosition(x, pos.y));
-    }
-  } catch (e) {}
+  previewSide = side;
+  appEl.classList.toggle('preview-left', side === 'left');
+  appEl.classList.toggle('preview-right', side === 'right');
 }
 
 // 手动窗口拖拽：按住移动超过阈值才进入系统拖拽，快速双击保留 dblclick 展开/折叠
@@ -390,15 +353,17 @@ async function openPreview(id, focusEditor = false) {
   await selectDraft(id);
   clearTimeout(previewCloseTimer);
   appEl.classList.remove('preview-closing');
-  // 展开方向：默认向右展开；若向右展开会超出当前显示器右缘则从左侧展开
+  // 展开方向：默认编辑在右（preview-right）；若编辑区会超出当前显示器右缘则编辑在左
   try {
     const monitor = await currentMonitor();
     if (monitor) {
-      const pos = await win.outerPosition();
       const scale = monitor.scaleFactor;
+      const pos = await win.outerPosition();
+      const dirScreenLeft = pos.x;                              // 展开前目录=窗口左缘
+      const previewWinLeft = dirScreenLeft - DIR_CENTER * scale; // 展开后窗口左缘（目录保持）
+      const editRight = previewWinLeft + (DIR_CENTER + DIR_W + EDIT_W) * scale;
       previewSide = 'right';
-      const winRight = pos.x + WINDOW_SIZE.preview.w * scale;
-      if (winRight > monitor.position.x + monitor.size.width) previewSide = 'left';
+      if (editRight > monitor.position.x + monitor.size.width) previewSide = 'left';
     }
   } catch (e) {}
   appEl.classList.toggle('preview-left', previewSide === 'left');
@@ -406,7 +371,6 @@ async function openPreview(id, focusEditor = false) {
   appEl.classList.add('preview-mode');
   expandedShell.classList.add('preview-open');
   await resizeWindow();
-  await avoidScreenEdge();
   if (focusEditor) requestAnimationFrame(() => editor.focus());
 }
 
