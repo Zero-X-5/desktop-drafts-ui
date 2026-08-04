@@ -883,55 +883,61 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
   display: none !important;
 }
 
-/* 目录表面：固定 x=472，与编辑同色、紧贴，圆角只在合并块外侧 */
+/* 上方栏 / 目录 / 编辑 三个独立界面：上方栏横跨合并面板随预览侧伸缩，目录与编辑对齐 */
+
+/* 上方栏：横跨合并面板（目录+编辑），随预览侧伸缩 */
+.app-window.preview-mode .window-toolbar {
+  position: absolute;
+  top: 0;
+  height: 34px;
+  z-index: 4;
+  background: var(--preview-directory-bg);
+  border-radius: 14px 14px 0 0;
+}
+.app-window.preview-right .window-toolbar { left: 472px; width: 720px; }
+.app-window.preview-left .window-toolbar  { left: 0px; width: 720px; }
+
+/* 内容区：从工具栏下方开始，目录与编辑对齐 */
+.app-window.preview-mode .window-content {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* 目录表面：固定 x=472 */
 .app-window.preview-mode .directory-view {
   left: 472px !important;
   right: auto !important;
   width: 248px !important;
   z-index: 2;
   background: var(--preview-directory-bg);
-  border-radius: 14px 0 0 14px;   /* preview-right：目录在合并块左缘 */
-  padding-top: 34px;
+  border-radius: 0 0 0 14px;
 }
 .app-window.preview-left .directory-view {
-  border-radius: 0 14px 14px 0;   /* preview-left：目录在合并块右缘 */
+  border-radius: 0 0 14px 0;
 }
 
-/* 编辑表面：与目录同色、紧贴无间隙，圆角只在合并块外侧 */
+/* 编辑表面：transform 滑动 */
 .app-window.preview-mode .editor-panel {
   left: 0 !important;
   right: auto !important;
   width: 472px !important;
   z-index: 1;
   background: var(--preview-directory-bg);
-  border-radius: 0 14px 14px 0;   /* preview-right：编辑在合并块右缘 */
+  border-radius: 0 0 14px 0;
 }
 .app-window.preview-left .editor-panel {
   transform: translateX(0) !important;
-  border-radius: 14px 0 0 14px;   /* preview-left：编辑在合并块左缘 */
+  border-radius: 0 0 0 14px;
 }
 .app-window.preview-right .editor-panel {
   transform: translateX(720px) !important;
-  border-radius: 0 14px 14px 0;
+  border-radius: 0 0 14px 0;
 }
 
-/* 工具栏固定到目录表面（不再横跨 1192） */
-.app-window.preview-mode .expanded-shell {
-  display: block;
-  border-radius: 0 !important;
-}
-.app-window.preview-mode .window-content {
-  position: absolute;
-  inset: 0;
-}
-.app-window.preview-mode .window-toolbar {
-  position: absolute;
-  left: 472px;
-  top: 0;
-  width: 248px;
-  z-index: 4;
-}
-/* 设置弹层跟随工具栏（目录表面），不再掉进轨道边缘 */
+/* 设置弹层跟随工具栏 */
 .app-window.preview-mode .settings-popover {
   left: 472px;
   right: auto;
