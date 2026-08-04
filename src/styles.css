@@ -966,3 +966,26 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
 .app-window.preview-opening.preview-ready::after {
   opacity: 0;
 }
+
+/* ===== 永久 1192 窗口：窗口恒宽不 resize，目录/工具栏/收起条固定 472，SetWindowRgn 决定可见 ===== */
+.app-window {
+  width: 1192px !important;
+  height: 480px !important;
+}
+.directory-view {
+  left: 472px !important;
+  right: auto !important;
+  width: 248px !important;
+}
+.app-window.expanded:not(.preview-mode) .window-toolbar {
+  position: absolute;
+  left: 472px;
+  top: 0;
+  width: 248px;
+  z-index: 4;
+}
+.collapsed-bar {
+  left: 472px !important;
+  right: auto !important;
+  width: 248px !important;
+}

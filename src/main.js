@@ -87,24 +87,29 @@ function escapeHtml(value) { return String(value).replace(/[&<>'"]/g, c => ({ '&
 async function resizeWindow() {
   const preview = isPreviewOpen();
   const expanded = appEl.classList.contains('expanded');
-  const size = preview ? WINDOW_SIZE.preview : (expanded ? WINDOW_SIZE.expanded : WINDOW_SIZE.collapsed);
-  const monitor = await currentMonitor();
-  const scale = monitor ? monitor.scaleFactor : 1;
-  const pos = await win.outerPosition();
-  const curW = (await win.outerSize()).width;
-  // 转换前目录屏幕左缘：窗口已是 1192 宽则目录居中（DIR_CENTER），否则目录在窗口左缘
-  const isWide = curW > WINDOW_SIZE.expanded.w * scale + 1;
-  const dirScreenLeft = isWide ? pos.x + DIR_CENTER * scale : pos.x;
-  await win.setSize(new LogicalSize(size.w, size.h));
-  const newX = preview ? dirScreenLeft - DIR_CENTER * scale : dirScreenLeft;
-  if (newX !== pos.x) await win.setPosition(new PhysicalPosition(newX, pos.y));
+  const hidden = appEl.classList.contains('hidden');
+  // 窗口恒 1192×480，只更新可见区域（SetWindowRgn），不再 resize
+  const state = (hidden || !expanded) ? 'collapsed'
+    : preview ? (previewSide === 'left' ? 'preview-left' : 'preview-right')
+    : 'expanded';
+  await invoke('set_window_region', { state }).catch(() => {});
 }
 
-// 交换方向：目录不动，只切换编辑区 CSS transform（窗口不移动）
+// 交换方向：目录不动，只切换编辑区 CSS transform（窗口不移动）。
+// 动画期间 Rgn 扩到全窗口，transitionend 后收缩到目标区域。
 async function applyPreviewSide(side) {
   previewSide = side;
   appEl.classList.toggle('preview-left', side === 'left');
   appEl.classList.toggle('preview-right', side === 'right');
+  await invoke('set_window_region', { state: 'full' }).catch(() => {});
+  const editorPanel = document.querySelector('.editor-panel');
+  const onEnd = (e) => {
+    if (e.propertyName === 'transform') {
+      editorPanel.removeEventListener('transitionend', onEnd);
+      invoke('set_window_region', { state: side === 'left' ? 'preview-left' : 'preview-right' }).catch(() => {});
+    }
+  };
+  editorPanel.addEventListener('transitionend', onEnd);
 }
 
 // 手动窗口拖拽：按住移动超过阈值才进入系统拖拽，快速双击保留 dblclick 展开/折叠
@@ -358,9 +363,6 @@ async function openPreview(id, focusEditor = false) {
   }
   clearTimeout(previewCloseTimer);
   appEl.classList.remove('preview-closing');
-  // 方案2：先铺遮罩盖住窗口，resize 中间帧不可见
-  appEl.classList.add('preview-opening');
-  void appEl.offsetWidth; // 强制渲染遮罩
   // 首次展开：按屏幕距离选方向（编辑放在不会超出屏幕边缘的一侧）
   let side = 'right';
   try {
@@ -368,36 +370,24 @@ async function openPreview(id, focusEditor = false) {
     if (monitor) {
       const scale = monitor.scaleFactor;
       const pos = await win.outerPosition();
-      const dirScreenLeft = pos.x;
-      const editRight = dirScreenLeft + (DIR_CENTER + DIR_W + EDIT_W) * scale;
+      const dirScreenLeft = pos.x + DIR_CENTER * scale;          // 目录屏幕左缘
+      const editRight = dirScreenLeft + (DIR_W + EDIT_W) * scale; // 编辑在右时右缘
       side = 'right';
       if (editRight > monitor.position.x + monitor.size.width) side = 'left';
     }
   } catch (e) {}
   previewSide = side;
-  // 第 1 步：resize 到 1192 + 左移保持目录屏幕（遮罩后，用户不可见中间帧）
-  const monitor = await currentMonitor();
-  const scale = monitor ? monitor.scaleFactor : 1;
-  const pos = await win.outerPosition();
-  const dirScreenLeft = pos.x;
-  const newX = dirScreenLeft - DIR_CENTER * scale;
-  await win.setSize(new LogicalSize(WINDOW_SIZE.preview.w, WINDOW_SIZE.preview.h));
-  if (newX !== pos.x) await win.setPosition(new PhysicalPosition(newX, pos.y));
-  // 第 2 步：下一帧加预览类——目录平滑滑到 472，编辑器无过渡直接定位目标侧
+  // 窗口恒 1192：直接加类 + 更新 Rgn（无 resize、无遮罩）
+  const editorPanel = document.querySelector('.editor-panel');
+  editorPanel.classList.add('no-preview-transition');
+  appEl.classList.toggle('preview-left', previewSide === 'left');
+  appEl.classList.toggle('preview-right', previewSide === 'right');
+  appEl.classList.add('preview-mode');
+  expandedShell.classList.add('preview-open');
+  await resizeWindow(); // Rgn → preview
   requestAnimationFrame(() => {
-    const editorPanel = document.querySelector('.editor-panel');
-    editorPanel.classList.add('no-preview-transition');
-    appEl.classList.toggle('preview-left', previewSide === 'left');
-    appEl.classList.toggle('preview-right', previewSide === 'right');
-    appEl.classList.add('preview-mode');
-    expandedShell.classList.add('preview-open');
-    requestAnimationFrame(() => {
-      editorPanel.classList.remove('no-preview-transition');
-      // 预览就位，遮罩淡出
-      appEl.classList.add('preview-ready');
-      setTimeout(() => appEl.classList.remove('preview-opening', 'preview-ready'), 220);
-      if (focusEditor) editor.focus();
-    });
+    editorPanel.classList.remove('no-preview-transition');
+    if (focusEditor) editor.focus();
   });
 }
 
@@ -737,12 +727,12 @@ async function setupNativeEvents() {
       if (!isPreviewOpen()) return;
       const monitor = await currentMonitor();
       if (!monitor) return;
+      const scale = monitor.scaleFactor;
       const pos = await win.outerPosition();
-      const size = await win.outerSize();
       const mLeft = monitor.position.x;
       const mRight = monitor.position.x + monitor.size.width;
       if (previewSide === 'right') {
-        if (pos.x + size.width >= mRight) await applyPreviewSide('left');
+        if (pos.x + WINDOW_SIZE.preview.w * scale >= mRight) await applyPreviewSide('left');
       } else {
         if (pos.x <= mLeft) await applyPreviewSide('right');
       }
@@ -785,6 +775,7 @@ async function init() {
     await setupNativeEvents();
   } catch (e) { console.error('native events', e); }
   await reloadDrafts();
+  await invoke('set_window_region', { state: 'collapsed' }).catch(() => {});
 }
 
 init();
