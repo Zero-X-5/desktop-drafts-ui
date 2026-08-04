@@ -62,11 +62,9 @@ let settings = {
 const WINDOW_SIZE = {
   collapsed: { w: 248, h: 36 },
   expanded: { w: 248, h: 480 },
-  preview: { w: 1192, h: 480 },
+  preview: { w: 720, h: 480 },   // 目录 248 + 编辑 472
 };
 const DIR_W = 248;      // 目录宽（逻辑）
-const DIR_CENTER = 472; // 目录在 1192 轨道窗口中的左侧偏移（= 编辑区宽）
-const EDIT_W = 472;     // 编辑区宽（逻辑）
 
 // ==================== helpers ====================
 function iconUse(id) { return `<svg><use href="#${id}"/></svg>`; }
@@ -88,29 +86,17 @@ async function resizeWindow() {
   const preview = isPreviewOpen();
   const expanded = appEl.classList.contains('expanded');
   const hidden = appEl.classList.contains('hidden');
-  // 窗口恒 1192×480，只更新可见区域（SetWindowRgn），不再 resize
-  const state = (hidden || !expanded) ? 'collapsed'
-    : preview ? (previewSide === 'left' ? 'preview-left' : 'preview-right')
-    : 'expanded';
-  await invoke('set_window_region', { state }).catch(() => {});
+  // 整体方案：窗口真实 resize，尺寸随状态
+  const size = (hidden || !expanded) ? WINDOW_SIZE.collapsed
+    : preview ? WINDOW_SIZE.preview : WINDOW_SIZE.expanded;
+  await win.setSize(new LogicalSize(size.w, size.h)).catch(() => {});
 }
 
-// 交换方向：目录不动，只切换编辑区 CSS transform（窗口不移动）。
-// 动画期间 Rgn 扩到全窗口，transitionend 后收缩到目标区域。
+// 交换方向：瞬间翻转（flex order），窗口尺寸不变（720），无动画
 async function applyPreviewSide(side) {
   previewSide = side;
-  // 先扩 Rgn 到全窗口，再切 class 触发动画，保证整个滑动过程不被旧 Rgn 裁剪
-  await invoke('set_window_region', { state: 'full' }).catch(() => {});
   appEl.classList.toggle('preview-left', side === 'left');
   appEl.classList.toggle('preview-right', side === 'right');
-  const editorPanel = document.querySelector('.editor-panel');
-  const onEnd = (e) => {
-    if (e.propertyName === 'transform') {
-      editorPanel.removeEventListener('transitionend', onEnd);
-      invoke('set_window_region', { state: side === 'left' ? 'preview-left' : 'preview-right' }).catch(() => {});
-    }
-  };
-  editorPanel.addEventListener('transitionend', onEnd);
 }
 
 // 手动窗口拖拽：按住移动超过阈值才进入系统拖拽，快速双击保留 dblclick 展开/折叠
@@ -339,7 +325,10 @@ async function expand(focusEditor = false) {
   expandedShell.classList.remove('preview-open');
   appEl.classList.remove('preview-mode', 'preview-left', 'preview-right');
   settingsPopover.classList.remove('show');
+  appEl.classList.add('masking');   // 遮罩盖住 248×36→248×480 的 resize 中间帧
   await resizeWindow();
+  await new Promise(r => setTimeout(r, 60));
+  appEl.classList.remove('masking');
   if (focusEditor) setTimeout(() => openPreview(activeId, true), 170);
 }
 
@@ -347,47 +336,60 @@ async function collapse() {
   flushSave();
   closeTransient();
   clearTimeout(previewCloseTimer);
+  appEl.classList.add('masking');   // 遮罩盖住收缩 resize 中间帧
   if (isPreviewOpen()) {
     expandedShell.classList.remove('preview-open');
     appEl.classList.remove('preview-mode', 'preview-left', 'preview-right');
   }
   appEl.classList.remove('expanded');
   await resizeWindow();
+  await new Promise(r => setTimeout(r, 60));
+  appEl.classList.remove('masking');
 }
 
 async function openPreview(id, focusEditor = false) {
   await selectDraft(id);
-  // 已在预览态：保持当前方向与布局，只切换内容（避免重新算方向导致错乱/闪烁）
+  // 已在预览态：保持当前方向与布局，只切换内容
   if (isPreviewOpen()) {
     if (focusEditor) editor.focus();
     return;
   }
   clearTimeout(previewCloseTimer);
   appEl.classList.remove('preview-closing');
-  // 首次展开：按屏幕距离选方向（编辑放在不会超出屏幕边缘的一侧）
+  // 选方向：窗口展开 720 后右缘是否超出当前显示器
   let side = 'right';
   try {
     const monitor = await currentMonitor();
     if (monitor) {
       const scale = monitor.scaleFactor;
       const pos = await win.outerPosition();
-      const dirScreenLeft = pos.x + DIR_CENTER * scale;          // 目录屏幕左缘
-      const editRight = dirScreenLeft + (DIR_W + EDIT_W) * scale; // 编辑在右时右缘
-      side = 'right';
-      if (editRight > monitor.position.x + monitor.size.width) side = 'left';
+      if (pos.x + WINDOW_SIZE.preview.w * scale > monitor.position.x + monitor.size.width) side = 'left';
     }
   } catch (e) {}
   previewSide = side;
-  // 窗口恒 1192：直接加类 + 更新 Rgn（无 resize、无遮罩）
-  const editorPanel = document.querySelector('.editor-panel');
-  editorPanel.classList.add('no-preview-transition');
-  appEl.classList.toggle('preview-left', previewSide === 'left');
-  appEl.classList.toggle('preview-right', previewSide === 'right');
+  // 遮罩盖住 resize 中间帧，避免 WebView2 新区域白屏闪烁
+  appEl.classList.add('preview-opening');
+  appEl.classList.toggle('preview-left', side === 'left');
+  appEl.classList.toggle('preview-right', side === 'right');
   appEl.classList.add('preview-mode');
   expandedShell.classList.add('preview-open');
-  await resizeWindow(); // Rgn → preview
+  await resizeWindow(); // 窗口 248→720
+  // 若右缘仍超屏，左移窗口使编辑器完整可见
+  try {
+    const monitor = await currentMonitor();
+    if (monitor) {
+      const scale = monitor.scaleFactor;
+      const pos = await win.outerPosition();
+      const mRight = monitor.position.x + monitor.size.width;
+      if (pos.x + WINDOW_SIZE.preview.w * scale > mRight) {
+        await win.setPosition(new PhysicalPosition(mRight - WINDOW_SIZE.preview.w * scale, pos.y));
+      }
+    }
+  } catch (e) {}
+  await new Promise(r => setTimeout(r, 60)); // 等 WebView 渲染 resize 后内容
   requestAnimationFrame(() => {
-    editorPanel.classList.remove('no-preview-transition');
+    appEl.classList.add('preview-ready');
+    setTimeout(() => appEl.classList.remove('preview-opening', 'preview-ready'), 240);
     if (focusEditor) editor.focus();
   });
 }
@@ -396,12 +398,15 @@ async function closePreview() {
   flushSave();
   if (!isPreviewOpen()) return;
   clearTimeout(previewCloseTimer);
-  // editor 向回滑出屏、toolbar 同步缩短（240ms），完成后先收缩 Rgn 再切背景，避免瞬裁闪烁
+  // 遮罩盖住 resize 中间帧，再收缩窗口
   appEl.classList.add('preview-closing');
-  await new Promise(r => setTimeout(r, 260));
   expandedShell.classList.remove('preview-open');
-  await resizeWindow();
-  appEl.classList.remove('preview-mode', 'preview-left', 'preview-right', 'preview-closing');
+  appEl.classList.remove('preview-mode', 'preview-left', 'preview-right');
+  await resizeWindow(); // 窗口 720→248
+  await new Promise(r => setTimeout(r, 60));
+  requestAnimationFrame(() => {
+    appEl.classList.remove('preview-closing');
+  });
 }
 
 async function hideApp() {
@@ -775,7 +780,6 @@ async function init() {
     await setupNativeEvents();
   } catch (e) { console.error('native events', e); }
   await reloadDrafts();
-  await invoke('set_window_region', { state: 'collapsed' }).catch(() => {});
 }
 
 init();

@@ -1,1019 +1,410 @@
-    :root {
-      color-scheme: light;
-      --glass: rgba(246, 247, 250, 0.72);
-      --glass-strong: rgba(250, 250, 252, 0.82);
-      --surface: rgba(251, 251, 253, 0.94);
-      --surface-soft: rgba(0, 0, 0, 0.035);
-      --surface-hover: rgba(0, 0, 0, 0.055);
-      --surface-selected: rgba(0, 122, 255, 0.12);
-      --text: #1d1d1f;
-      --text-secondary: #646469;
-      --text-tertiary: #8c8c92;
-      --line: rgba(0, 0, 0, 0.08);
-      --line-strong: rgba(0, 0, 0, 0.12);
-      --accent: #007aff;
-      --accent-soft: rgba(0, 122, 255, 0.14);
-      --danger: #e5484d;
-      --warning: #a86a00;
-      --warning-bg: rgba(255, 180, 0, 0.14);
-      --shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.08);
-      --menu-shadow: 0 12px 36px rgba(0, 0, 0, 0.24), 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
+/* ============ 拾笺 — 整体方案 ============ */
+/* 一个整体 DOM + 窗口真实 resize；目录/编辑 flex 排列，左右交换瞬间翻转（flex order） */
+/* 打开/收起用遮罩盖住 resize 中间帧，避免 WebView2 新区域白屏 */
 
-    html[data-theme="dark"] {
-      color-scheme: dark;
-      --glass: rgba(30, 31, 35, 0.68);
-      --glass-strong: rgba(35, 36, 40, 0.8);
-      --surface: rgba(27, 28, 31, 0.94);
-      --surface-soft: rgba(255, 255, 255, 0.035);
-      --surface-hover: rgba(255, 255, 255, 0.075);
-      --surface-selected: rgba(10, 132, 255, 0.2);
-      --text: #f5f5f7;
-      --text-secondary: #b2b2b7;
-      --text-tertiary: #88888e;
-      --line: rgba(255, 255, 255, 0.085);
-      --line-strong: rgba(255, 255, 255, 0.13);
-      --accent: #0a84ff;
-      --accent-soft: rgba(10, 132, 255, 0.2);
-      --danger: #ff6961;
-      --warning: #ffc45c;
-      --warning-bg: rgba(255, 180, 0, 0.12);
-      --shadow: 0 10px 38px rgba(0, 0, 0, 0.38), 0 1px 2px rgba(0, 0, 0, 0.35);
-      --menu-shadow: 0 14px 42px rgba(0, 0, 0, 0.48), 0 1px 3px rgba(0, 0, 0, 0.35);
-    }
-
-    * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-    body {
-      font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at 28% 18%, rgba(255, 169, 119, 0.9), transparent 30%),
-        radial-gradient(circle at 72% 20%, rgba(116, 196, 255, 0.78), transparent 33%),
-        radial-gradient(circle at 48% 78%, rgba(152, 119, 255, 0.7), transparent 42%),
-        linear-gradient(135deg, #284b80, #c5667d 52%, #203f73);
-    }
-
-    button, input, textarea { font: inherit; }
-    button { color: inherit; }
-    svg { display: block; width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-
-    .desktop-copy {
-      position: fixed;
-      left: 28px;
-      top: 28px;
-      color: rgba(255,255,255,.88);
-      text-shadow: 0 1px 12px rgba(0,0,0,.3);
-      user-select: none;
-    }
-    .desktop-copy strong { display: block; font-size: 22px; font-weight: 620; letter-spacing: -.02em; }
-    .desktop-copy span { display: block; margin-top: 5px; font-size: 12px; color: rgba(255,255,255,.68); }
-
-    .taskbar {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      background: rgba(17, 22, 34, .48);
-      border-top: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(28px) saturate(1.25);
-    }
-    .task-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.11); }
-    .task-icon.active { background: linear-gradient(145deg, rgba(255,255,255,.3), rgba(255,255,255,.12)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
-
-    .app-window {
-      position: fixed;
-      right: 16px;
-      bottom: 64px;
-      width: 240px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--glass);
-      box-shadow: var(--shadow);
-      overflow: visible;
-      backdrop-filter: blur(26px) saturate(1.32);
-      -webkit-backdrop-filter: blur(26px) saturate(1.32);
-      transition:
-        width 210ms cubic-bezier(.22,1,.36,1),
-        height 210ms cubic-bezier(.22,1,.36,1),
-        border-radius 210ms cubic-bezier(.22,1,.36,1),
-        background-color 180ms ease;
-      z-index: 1100;
-      isolation: isolate;
-    }
-    .app-window::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      border: 1px solid rgba(255,255,255,.16);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
-      pointer-events: none;
-      z-index: 50;
-    }
-    html[data-theme="light"] .app-window::before { border-color: rgba(255,255,255,.54); }
-    .app-window.expanded {
-      width: 240px;
-      height: min(460px, calc(100vh - 80px));
-      border-radius: 12px;
-      background: var(--glass-strong);
-    }
-    .app-window.expanded.preview-mode {
-      width: min(680px, calc(100vw - 32px));
-    }
-    .app-window.hidden {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-    }
-    .collapsed-bar, .expanded-shell {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-    }
-    .collapsed-bar {
-      height: 36px;
-      display: flex;
-      align-items: center;
-      padding: 0 8px 0 10px;
-      gap: 6px;
-      opacity: 1;
-      visibility: visible;
-      transition: opacity 90ms ease, visibility 0s linear 0s;
-      user-select: none;
-    }
-    .expanded .collapsed-bar {
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 70ms ease, visibility 0s linear 70ms;
-    }
-    .collapsed-brand {
-      flex: 1;
-      min-width: 0;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: grab;
-    }
-    .collapsed-brand:active { cursor: grabbing; }
-    .brand-mark {
-      width: 16px;
-      height: 16px;
-      border-radius: 5px;
-      display: grid;
-      place-items: center;
-      color: var(--accent);
-      background: var(--accent-soft);
-      flex: 0 0 auto;
-    }
-    .brand-mark svg { width: 11px; height: 11px; stroke-width: 1.9; }
-    .collapsed-title {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 12px;
-      font-weight: 430;
-      color: var(--text);
-    }
-    .icon-button {
-      width: 28px;
-      height: 28px;
-      flex: 0 0 28px;
-      display: grid;
-      place-items: center;
-      border: 0;
-      border-radius: 7px;
-      padding: 0;
-      background: transparent;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: background-color 110ms ease, color 110ms ease, transform 80ms ease;
-    }
-    .icon-button svg { width: 16px; height: 16px; }
-    .icon-button:hover { color: var(--text); background: var(--surface-hover); }
-    .icon-button:active { transform: scale(.94); background: var(--surface-selected); }
-    .icon-button:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
-    .icon-button.primary { color: var(--accent); }
-
-    .expanded-shell {
-      display: grid;
-      grid-template-rows: 32px 1fr;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(3px);
-      transition: opacity 110ms ease, transform 180ms cubic-bezier(.22,1,.36,1), visibility 0s linear 180ms;
-      overflow: hidden;
-    }
-    .expanded .expanded-shell {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-      transition: opacity 130ms ease 55ms, transform 200ms cubic-bezier(.22,1,.36,1), visibility 0s;
-    }
-    .window-content {
-      min-height: 0;
-      position: relative;
-      overflow: hidden;
-    }
-    .directory-view {
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 100%;
-      min-height: 0;
-      display: flex;
-      border-right: 1px solid transparent;
-      transition: width 210ms cubic-bezier(.22,1,.36,1), border-color 110ms ease;
-    }
-    .expanded-shell.preview-open .directory-view {
-      width: 240px;
-      border-color: var(--line);
-    }
-    .editor-panel {
-      position: absolute;
-      inset: 0 0 0 241px;
-      display: flex;
-      transform: translateX(100%);
-      visibility: hidden;
-      opacity: 0;
-      transition: transform 210ms cubic-bezier(.22,1,.36,1), opacity 130ms ease, visibility 0s linear 210ms;
-    }
-    .expanded-shell.preview-open .editor-panel {
-      transform: translateX(0);
-      visibility: visible;
-      opacity: 1;
-      transition: transform 210ms cubic-bezier(.22,1,.36,1), opacity 130ms ease 55ms, visibility 0s;
-    }
-    .window-toolbar {
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 6px 0 12px;
-      user-select: none;
-      cursor: grab;
-    }
-    .window-toolbar:active { cursor: grabbing; }
-    .window-toolbar .toolbar-brand { cursor: grab; }
-    .window-toolbar:active .toolbar-brand { cursor: grabbing; }
-    .toolbar-brand { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; }
-    .toolbar-brand .brand-mark { width: 17px; height: 17px; }
-    .toolbar-actions { display: flex; align-items: center; gap: 2px; }
-
-    .list-panel {
-      min-width: 0;
-      min-height: 0;
-      width: 100%;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 8px 0 0;
-      background: rgba(0,0,0,.025);
-    }
-    html[data-theme="dark"] .list-panel { background: rgba(255,255,255,.016); }
-    .search-box {
-      height: 28px;
-      margin: 0 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 6px;
-      padding: 0 8px;
-      color: var(--text-tertiary);
-      background: var(--surface-soft);
-      border: 1px solid transparent;
-      transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
-    }
-    .search-box:focus-within { border-color: color-mix(in srgb, var(--accent) 48%, transparent); background: var(--surface); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent); }
-    .search-box svg { width: 14px; height: 14px; flex: 0 0 auto; }
-    .search-box input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 12px; }
-    .search-box input::placeholder { color: var(--text-tertiary); }
-    .filter-row {
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 12px;
-      font-size: 11px;
-      color: var(--text-secondary);
-    }
-    .filter-button { display: inline-flex; align-items: center; gap: 4px; border: 0; padding: 4px 5px; border-radius: 5px; background: transparent; color: inherit; font-size: 11px; cursor: pointer; }
-    .filter-button:hover { color: var(--text); background: var(--surface-hover); }
-    .filter-button svg { width: 12px; height: 12px; }
-    .draft-list { min-height: 0; flex: 1; overflow: auto; padding: 0 6px 8px; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
-    .group-label { height: 22px; display: flex; align-items: center; padding: 0 7px; color: var(--text-tertiary); font-size: 10px; font-weight: 600; letter-spacing: .03em; }
-    .group-divider { height: 1px; margin: 5px 6px; background: var(--line); }
-    .draft-row {
-      width: 100%;
-      height: 48px;
-      display: grid;
-      grid-template-columns: 16px minmax(0,1fr) auto 18px;
-      grid-template-rows: 23px 19px;
-      align-items: center;
-      column-gap: 5px;
-      padding: 3px 8px 3px 7px;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      color: var(--text);
-      text-align: left;
-      cursor: default;
-      transition: background-color 110ms ease;
-    }
-    .draft-row:hover { background: var(--surface-hover); }
-    .draft-row.selected { background: var(--surface-selected); }
-    .draft-row.dragging { opacity: .42; }
-    .draft-row.drop-target { box-shadow: inset 0 2px 0 var(--accent); }
-    .draft-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-    .pin-slot { grid-row: 1 / 3; color: var(--accent); opacity: .9; }
-    .pin-slot svg { width: 12px; height: 12px; margin: auto; }
-    .pin-slot.empty { opacity: .16; }
-    .draft-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 560; align-self: end; }
-    .draft-time { font-size: 10px; color: var(--text-tertiary); align-self: end; }
-    .draft-preview { grid-column: 2 / 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--text-secondary); align-self: start; }
-    .drag-handle {
-      grid-column: 4;
-      grid-row: 1 / 3;
-      display: grid;
-      place-items: center;
-      color: var(--text-tertiary);
-      opacity: 0;
-      cursor: grab;
-      transition: opacity 110ms ease;
-    }
-    .draft-row:hover .drag-handle,
-    .draft-row:focus-visible .drag-handle { opacity: .72; }
-    .drag-handle:active { cursor: grabbing; }
-    .drag-handle svg { width: 14px; height: 14px; }
-    .empty-list { height: 100%; display: grid; place-content: center; justify-items: center; padding: 24px; text-align: center; color: var(--text-secondary); }
-    .empty-icon { width: 48px; height: 48px; display: grid; place-items: center; margin-bottom: 12px; border-radius: 15px; color: var(--accent); background: var(--accent-soft); opacity: .72; }
-    .empty-icon svg { width: 24px; height: 24px; }
-    .empty-list strong { font-size: 13px; font-weight: 600; }
-    .empty-list span { margin-top: 6px; font-size: 11px; color: var(--text-tertiary); }
-
-    .editor-panel { min-width: 0; min-height: 0; flex-direction: column; background: var(--surface); }
-    .editor-header {
-      min-height: 40px;
-      display: flex;
-      align-items: center;
-      padding: 0 8px 0 16px;
-      gap: 8px;
-      border-bottom: 1px solid var(--line);
-    }
-    .title-input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; }
-    .save-status { flex: 0 0 auto; font-size: 11px; color: var(--text-tertiary); transition: color 150ms ease, opacity 180ms ease; }
-    .save-status.saving { color: var(--accent); }
-    .save-status.error { color: var(--danger); }
-    .conflict-banner {
-      min-height: 36px;
-      display: none;
-      align-items: center;
-      gap: 7px;
-      padding: 0 10px 0 12px;
-      color: var(--warning);
-      background: var(--warning-bg);
-      border-bottom: 1px solid color-mix(in srgb, var(--warning) 18%, transparent);
-      font-size: 12px;
-    }
-    .conflict-banner.show { display: flex; }
-    .conflict-banner svg { width: 15px; height: 15px; }
-    .conflict-banner span { flex: 1; color: var(--text); }
-    .text-button { border: 0; padding: 4px 6px; border-radius: 5px; background: transparent; color: var(--accent); font-size: 12px; cursor: pointer; }
-    .text-button:hover { background: var(--surface-hover); }
-    .text-button.muted { color: var(--text-secondary); }
-    .editor-wrap { min-height: 0; flex: 1; padding: 8px 20px 20px; }
-    .editor {
-      width: 100%;
-      height: 100%;
-      resize: none;
-      border: 0;
-      outline: 0;
-      padding: 0;
-      color: var(--text);
-      caret-color: var(--accent);
-      background: transparent;
-      font-family: "Cascadia Code", Consolas, ui-monospace, monospace;
-      font-size: 14px;
-      line-height: 1.7;
-      scrollbar-width: thin;
-      scrollbar-color: var(--line-strong) transparent;
-    }
-    .editor::placeholder { color: var(--text-tertiary); }
-
-    .popover, .context-menu {
-      position: absolute;
-      z-index: 1200;
-      border: 1px solid var(--line-strong);
-      background: color-mix(in srgb, var(--glass-strong) 92%, transparent);
-      box-shadow: var(--menu-shadow);
-      backdrop-filter: blur(30px) saturate(1.35);
-      -webkit-backdrop-filter: blur(30px) saturate(1.35);
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-4px) scale(.985);
-      transform-origin: top right;
-      transition: opacity 135ms ease, transform 160ms cubic-bezier(.22,1,.36,1), visibility 0s linear 160ms;
-    }
-    .popover.show, .context-menu.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); transition: opacity 135ms ease, transform 160ms cubic-bezier(.22,1,.36,1), visibility 0s; }
-    .settings-popover { top: 36px; right: 8px; width: min(280px, calc(100% - 16px)); max-height: min(400px, calc(100% - 48px)); overflow: auto; border-radius: 10px; padding: 10px; }
-    .settings-section + .settings-section { margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
-    .settings-label { margin: 0 4px 4px; color: var(--text-tertiary); font-size: 10px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
-    .setting-row { min-height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 4px; font-size: 12px; }
-    .setting-row > span:first-child { flex: 1; }
-    .segmented { height: 26px; display: flex; padding: 2px; border-radius: 7px; background: var(--surface-soft); }
-    .segmented button { height: 22px; min-width: 42px; border: 0; padding: 0 7px; border-radius: 5px; background: transparent; color: var(--text-secondary); font-size: 11px; cursor: pointer; }
-    .segmented button.active { color: var(--text); background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
-    .switch { width: 30px; height: 18px; position: relative; border: 0; border-radius: 999px; padding: 0; background: var(--line-strong); cursor: pointer; transition: background-color 140ms ease; }
-    .switch::after { content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.28); transition: transform 150ms cubic-bezier(.22,1,.36,1); }
-    .switch.on { background: var(--accent); }
-    .switch.on::after { transform: translateX(12px); }
-    .path { max-width: 145px; display: inline-flex; align-items: center; gap: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 11px; }
-    .path svg { width: 12px; height: 12px; flex: 0 0 auto; }
-    .demo-button { width: 100%; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-soft); color: var(--text-secondary); font-size: 11px; cursor: pointer; }
-    .demo-button:hover { color: var(--text); background: var(--surface-hover); }
-
-    .context-menu { width: 180px; border-radius: 8px; padding: 5px; transform-origin: top left; }
-    .menu-item { width: 100%; height: 32px; display: grid; grid-template-columns: 22px 1fr auto; align-items: center; border: 0; border-radius: 5px; padding: 0 7px; background: transparent; color: var(--text); font-size: 12px; text-align: left; cursor: pointer; }
-    .menu-item:hover { background: var(--surface-hover); }
-    .menu-item svg { width: 15px; height: 15px; color: var(--text-secondary); }
-    .menu-item kbd { color: var(--text-tertiary); font: 10px "Segoe UI Variable", sans-serif; }
-    .menu-item.danger { color: var(--danger); }
-    .menu-item.danger svg { color: var(--danger); }
-    .menu-separator { height: 1px; margin: 4px 3px; background: var(--line); }
-
-    .modal-layer { position: absolute; inset: 0; z-index: 1300; display: grid; place-items: center; border-radius: inherit; background: rgba(0,0,0,.4); opacity: 0; visibility: hidden; transition: opacity 130ms ease, visibility 0s linear 130ms; }
-    .modal-layer.show { opacity: 1; visibility: visible; transition: opacity 130ms ease, visibility 0s; }
-    .dialog { width: min(320px, calc(100% - 32px)); border-radius: 12px; padding: 20px; background: var(--surface); box-shadow: var(--menu-shadow); transform: scale(.97); transition: transform 170ms cubic-bezier(.22,1,.36,1); }
-    .modal-layer.show .dialog { transform: scale(1); }
-    .dialog h2 { margin: 0; font-size: 14px; font-weight: 650; }
-    .dialog p { margin: 8px 0 18px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
-    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
-    .dialog-button { min-width: 92px; height: 32px; border: 0; border-radius: 7px; background: var(--surface-hover); color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; }
-    .dialog-button.danger { background: var(--danger); color: white; }
-
-    .toast { position: absolute; left: 50%; bottom: 12px; z-index: 1400; min-width: 100px; max-width: 280px; height: 28px; display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 12px; border-radius: 14px; color: white; background: rgba(35, 36, 40, .84); box-shadow: 0 5px 18px rgba(0,0,0,.22); backdrop-filter: blur(14px); font-size: 12px; opacity: 0; visibility: hidden; transform: translate(-50%, 6px); transition: opacity 150ms ease, transform 180ms cubic-bezier(.22,1,.36,1), visibility 0s linear 180ms; }
-    .toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity 150ms ease, transform 180ms cubic-bezier(.22,1,.36,1), visibility 0s; }
-    .toast svg { width: 14px; height: 14px; }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
-    }
-
-    /* macOS 27 visual system */
-    :root {
-      color-scheme: light;
-      --glass: rgba(242, 243, 248, 0.78);
-      --glass-strong: rgba(242, 243, 248, 0.88);
-      --surface: rgba(247, 248, 251, 0.96);
-      --surface-soft: rgba(0, 0, 0, 0.028);
-      --surface-hover: rgba(0, 0, 0, 0.062);
-      --surface-selected: rgba(108, 143, 255, 0.16);
-      --text: #18191f;
-      --text-secondary: #626572;
-      --text-tertiary: #858895;
-      --line: rgba(0, 0, 0, 0.07);
-      --line-strong: rgba(0, 0, 0, 0.10);
-      --accent: #6c8fff;
-      --accent-soft: rgba(108, 143, 255, 0.16);
-      --danger: #e85d67;
-      --warning: #b37b20;
-      --warning-bg: rgba(232, 169, 58, 0.10);
-      --shadow-window: 0 24px 64px rgba(0,0,0,.52), 0 2px 8px rgba(0,0,0,.38);
-      --shadow-menu: 0 16px 48px rgba(0,0,0,.58), 0 2px 6px rgba(0,0,0,.42);
-      --shadow: var(--shadow-window);
-      --menu-shadow: var(--shadow-menu);
-      --fw-regular: 400;
-      --fw-medium: 500;
-      --fw-semibold: 590;
-      --fw-bold: 650;
-    }
-    html[data-theme="dark"] {
-      color-scheme: dark;
-      --glass: rgba(18, 20, 26, 0.62);
-      --glass-strong: rgba(22, 24, 30, 0.76);
-      --surface: rgba(20, 22, 28, 0.96);
-      --surface-soft: rgba(255,255,255,0.028);
-      --surface-hover: rgba(255,255,255,0.062);
-      --surface-selected: rgba(99,140,255,0.18);
-      --text: #e8e9ef;
-      --text-secondary: #9496a0;
-      --text-tertiary: #5e6070;
-      --line: rgba(255,255,255,0.065);
-      --line-strong: rgba(255,255,255,0.10);
-      --accent: #6c8fff;
-      --accent-soft: rgba(108,143,255,0.16);
-      --danger: #ff6b6b;
-      --warning: #e8a93a;
-      --warning-bg: rgba(232,169,58,0.10);
-      --shadow: var(--shadow-window);
-      --menu-shadow: var(--shadow-menu);
-    }
-    * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
-    ::-webkit-scrollbar { width: 3px; height: 3px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.22); }
-    html[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.14); }
-    body {
-      font-family: "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
-      background:
-        radial-gradient(circle at 18% 15%, rgba(108,143,255,.12), transparent 34%),
-        radial-gradient(circle at 78% 23%, rgba(126,105,220,.09), transparent 38%),
-        radial-gradient(circle at 58% 88%, rgba(70,95,170,.08), transparent 42%),
-        linear-gradient(135deg, #0d0f14, #1a1d28 52%, #12141c);
-    }
-    html[data-theme="light"] body {
-      background:
-        radial-gradient(circle at 20% 12%, rgba(108,143,255,.12), transparent 34%),
-        radial-gradient(circle at 80% 22%, rgba(180,164,240,.12), transparent 38%),
-        linear-gradient(135deg, #f0f1f5, #e8eaf1 52%, #f3f4f7);
-    }
-    .desktop-copy { left: 30px; top: 30px; color: rgba(232,233,239,.84); text-shadow: 0 1px 16px rgba(0,0,0,.38); }
-    html[data-theme="light"] .desktop-copy { color: rgba(24,25,31,.72); text-shadow: none; }
-    .desktop-copy strong { font-size: 22px; font-weight: var(--fw-semibold); }
-    .desktop-copy span { font-size: 12px; color: var(--text-secondary); }
-    .taskbar {
-      height: 50px;
-      gap: 9px;
-      background: rgba(12,14,20,.52);
-      border-top: 1px solid rgba(255,255,255,.09);
-      backdrop-filter: blur(32px) saturate(1.2);
-      -webkit-backdrop-filter: blur(32px) saturate(1.2);
-    }
-    html[data-theme="light"] .taskbar { background: rgba(235,237,243,.68); border-top-color: rgba(0,0,0,.08); }
-    .task-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.11); }
-    .task-icon.active { background: linear-gradient(145deg, rgba(108,143,255,.36), rgba(255,255,255,.12)); }
-    .app-window {
-      bottom: 66px;
-      width: 248px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--glass);
-      box-shadow: var(--shadow-window);
-      backdrop-filter: blur(32px) saturate(1.3);
-      -webkit-backdrop-filter: blur(32px) saturate(1.3);
-      transition: width 220ms cubic-bezier(.22,1,.36,1), height 220ms cubic-bezier(.22,1,.36,1), border-radius 220ms cubic-bezier(.22,1,.36,1), background-color 180ms ease;
-    }
-    .app-window::before { border-color: rgba(255,255,255,.10); box-shadow: inset 0 1px 0 rgba(255,255,255,.10); }
-    html[data-theme="light"] .app-window::before { border-color: rgba(0,0,0,.08); }
-    .app-window.expanded { width: 248px; height: min(480px, calc(100vh - 82px)); border-radius: 14px; background: var(--glass-strong); }
-    .app-window.expanded.preview-mode { width: min(720px, calc(100vw - 32px)); }
-    .collapsed-bar { padding: 0 8px 0 10px; gap: 6px; }
-    .brand-mark { width: 15px; height: 15px; border-radius: 5px; background: linear-gradient(145deg, rgba(108,143,255,.22), rgba(108,143,255,.10)); }
-    .brand-mark svg { width: 10px; height: 10px; stroke-width: 1.6; }
-    .collapsed-title { font-size: 12px; font-weight: var(--fw-regular); }
-    .icon-button { width: 28px; height: 28px; flex-basis: 28px; border-radius: 7px; }
-    .icon-button svg { width: 16px; height: 16px; stroke-width: 1.6; }
-    .icon-button:active { transform: scale(.92); transition: transform 120ms cubic-bezier(.22,1,.36,1); }
-    .expanded-shell { grid-template-rows: 34px 1fr; }
-    .window-toolbar { height: 34px; padding: 0 8px 0 14px; }
-    .toolbar-brand { gap: 7px; font-size: 12.5px; font-weight: var(--fw-semibold); }
-    .toolbar-brand .brand-mark { width: 17px; height: 17px; }
-    .toolbar-actions { gap: 2px; }
-    .expanded-shell.preview-open .directory-view { width: 248px; }
-    .editor-panel { left: 249px; }
-    .list-panel { padding-top: 10px; background: var(--surface-soft); }
-    html[data-theme="dark"] .list-panel { background: rgba(255,255,255,.012); }
-    .search-box { height: 28px; margin: 0 10px; padding: 0 9px; gap: 6px; border-radius: 8px; }
-    .search-box svg { width: 13px; height: 13px; stroke-width: 1.6; }
-    .search-box input { font-size: 12px; }
-    .search-box:focus-within { box-shadow: 0 0 0 2.5px rgba(108,143,255,.22); border-color: rgba(108,143,255,.42); }
-    .filter-row { height: 30px; padding: 0 10px; }
-    .filter-button { border-radius: 6px; font-size: 11px; }
-    .filter-button svg { width: 11px; height: 11px; stroke-width: 1.6; }
-    .draft-list { padding: 0 6px 10px; }
-    .group-label { height: 22px; padding: 0 8px; font-size: 9.5px; font-weight: var(--fw-bold); letter-spacing: .08em; text-transform: uppercase; }
-    .group-divider { margin: 4px 8px; }
-    .draft-row {
-      height: 52px;
-      grid-template-columns: 14px minmax(0,1fr) auto 16px;
-      grid-template-rows: 25px 20px;
-      column-gap: 5px;
-      padding: 5px 9px 5px 8px;
-      border-radius: 7px;
-      margin-bottom: 1px;
-      transition: background-color 110ms ease, transform 120ms ease;
-    }
-    .draft-row.dragging { opacity: .38; filter: blur(1px); }
-    .pin-slot svg { width: 11px; height: 11px; stroke-width: 1.6; }
-    .draft-name { font-size: 13px; font-weight: var(--fw-semibold); }
-    .draft-time { font-size: 10px; font-weight: var(--fw-regular); }
-    .draft-preview { font-size: 11px; line-height: 1.3; }
-    .drag-handle svg { width: 13px; height: 13px; stroke-width: 1.6; }
-    .empty-icon { width: 52px; height: 52px; border-radius: 14px; margin-bottom: 12px; border: 1px solid rgba(108,143,255,.18); background: rgba(108,143,255,.12); }
-    .empty-icon svg { width: 22px; height: 22px; }
-    .empty-list strong { font-size: 13px; font-weight: var(--fw-semibold); }
-    .empty-list span { font-size: 11px; }
-    .editor-panel { background: var(--surface); }
-    .editor-header { min-height: 44px; padding: 0 10px 0 18px; gap: 10px; }
-    .title-input { font-size: 15px; font-weight: var(--fw-bold); }
-    .save-status { font-size: 10.5px; font-weight: var(--fw-regular); }
-    .conflict-banner { min-height: 38px; padding: 0 12px 0 14px; gap: 8px; font-size: 11.5px; border-radius: 0; }
-    .conflict-banner svg { width: 14px; height: 14px; stroke-width: 1.6; }
-    .text-button { font-size: 11.5px; }
-    .editor-wrap { padding: 12px 24px 24px; }
-    .editor { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13.5px; line-height: 1.75; }
-    .popover, .context-menu { border-color: rgba(255,255,255,.11); box-shadow: var(--shadow-menu); backdrop-filter: blur(36px) saturate(1.38); -webkit-backdrop-filter: blur(36px) saturate(1.38); }
-    .settings-popover { top: 38px; width: min(276px, calc(100% - 16px)); border-radius: 12px; padding: 12px; }
-    .settings-section + .settings-section { margin-top: 10px; padding-top: 10px; }
-    .settings-label { font-size: 9.5px; font-weight: var(--fw-bold); letter-spacing: .09em; }
-    .setting-row { min-height: 34px; font-size: 12px; }
-    .segmented { height: 26px; padding: 2px; border-radius: 8px; }
-    .segmented button { height: 22px; border-radius: 6px; font-size: 11px; font-weight: var(--fw-medium); }
-    .switch { width: 32px; height: 18px; }
-    .switch.on::after { transform: translateX(14px); }
-    .path { font-size: 11px; }
-    .path svg { width: 11px; height: 11px; }
-    .context-menu { width: 188px; padding: 5px; border-radius: 10px; }
-    .menu-item { height: 30px; grid-template-columns: 20px 1fr auto; padding: 0 8px; border-radius: 6px; font-size: 12px; }
-    .menu-item svg { width: 14px; height: 14px; stroke-width: 1.6; }
-    .menu-item kbd { font-size: 10.5px; }
-    .menu-separator { margin: 4px 6px; }
-    .modal-layer { background: rgba(0,0,0,.46); backdrop-filter: blur(4px); }
-    .dialog { width: min(320px, calc(100% - 32px)); padding: 22px; border-radius: 14px; }
-    .dialog h2 { font-size: 14px; font-weight: var(--fw-bold); line-height: 1.2; }
-    .dialog p { font-size: 12px; line-height: 1.55; margin-bottom: 20px; }
-    .dialog-button { min-width: 96px; height: 32px; border-radius: 8px; font-size: 12px; font-weight: var(--fw-semibold); }
-    .toast { height: 30px; bottom: 14px; padding: 0 14px; border-radius: 20px; gap: 6px; color: rgba(235,236,242,.96); background: rgba(28,30,38,.88); box-shadow: 0 6px 20px rgba(0,0,0,.38); backdrop-filter: blur(20px); font-size: 12px; font-weight: var(--fw-medium); }
-    .toast svg { width: 13px; height: 13px; stroke-width: 1.6; }
-
-    /* v10 — light glass refinement */
-    :root {
-      --glass: rgba(242, 243, 248, 0.70);
-      --glass-strong: rgba(242, 243, 248, 0.80);
-      --surface: rgba(247, 248, 251, 0.86);
-      --shadow-window: 0 18px 48px rgba(0,0,0,.24), 0 2px 8px rgba(0,0,0,.14);
-      --shadow-menu: 0 14px 38px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.16);
-    }
-    html[data-theme="dark"] {
-      --glass: rgba(27, 30, 38, 0.56);
-      --glass-strong: rgba(29, 32, 41, 0.70);
-      --surface: rgba(23, 26, 34, 0.84);
-      --surface-soft: rgba(255,255,255,0.026);
-      --surface-hover: rgba(255,255,255,0.066);
-      --shadow-window: 0 18px 48px rgba(0,0,0,.36), 0 2px 8px rgba(0,0,0,.22);
-      --shadow-menu: 0 14px 40px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.26);
-    }
-    body {
-      background:
-        radial-gradient(circle at 16% 14%, rgba(83,124,226,.25), transparent 36%),
-        radial-gradient(circle at 82% 20%, rgba(118,91,202,.18), transparent 40%),
-        radial-gradient(circle at 52% 88%, rgba(55,91,170,.20), transparent 44%),
-        radial-gradient(circle at 70% 66%, rgba(55,112,175,.09), transparent 32%),
-        linear-gradient(135deg, #0b0e15, #171c2a 52%, #0e121b);
-    }
-    html[data-theme="light"] body {
-      background:
-        radial-gradient(circle at 18% 14%, rgba(108,143,255,.18), transparent 36%),
-        radial-gradient(circle at 82% 22%, rgba(161,138,229,.14), transparent 40%),
-        linear-gradient(135deg, #eef0f5, #e5e8f0 52%, #f1f2f6);
-    }
-    .app-window {
-      box-shadow: var(--shadow-window);
-      backdrop-filter: blur(30px) saturate(1.34);
-      -webkit-backdrop-filter: blur(30px) saturate(1.34);
-    }
-    .app-window::before {
-      border-color: rgba(255,255,255,.13);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.13);
-    }
-    .editor-panel {
-      background: var(--surface);
-      backdrop-filter: blur(18px) saturate(1.16);
-      -webkit-backdrop-filter: blur(18px) saturate(1.16);
-    }
-    .popover, .context-menu {
-      box-shadow: var(--shadow-menu);
-      background: rgba(29,32,41,.76);
-    }
-    html[data-theme="light"] .popover,
-    html[data-theme="light"] .context-menu {
-      background: rgba(244,245,249,.82);
-    }
-    #settingsButton svg {
-      width: 18px;
-      height: 18px;
-    }
-    :root {
-      --shadow-window: 0 10px 28px rgba(0,0,0,.14), 0 1px 4px rgba(0,0,0,.08);
-    }
-    html[data-theme="dark"] {
-      --shadow-window: 0 10px 28px rgba(0,0,0,.20), 0 1px 4px rgba(0,0,0,.12);
-    }
-    .app-window.always-on-top { z-index: 2000; }
-    .icon-button.toggle-active {
-      color: var(--accent);
-      background: transparent;
-    }
-    .icon-button.toggle-active svg {
-      transform: scale(1.05);
-    }
-    .window-context-menu {
-      right: 0;
-      bottom: 42px;
-      left: auto;
-      top: auto;
-      transform-origin: bottom right;
-    }
-    .window-context-menu .menu-item kbd {
-      min-width: 14px;
-      text-align: center;
-      color: var(--accent);
-      font-family: inherit;
-      font-weight: var(--fw-semibold);
-    }
-    /* v13 — 无缝连接目录与预览页 */
-    .expanded-shell.preview-open .directory-view {
-      border-right: 0;
-    }
-
-    .editor-panel {
-      left: 248px;
-    }
-
-    /* v14 — 智能预览方向 + 右上角驻留 */
-    .app-window {
-      top: 16px;
-      right: 16px;
-      bottom: auto;
-    }
-    .app-window.preview-left .directory-view {
-      left: auto;
-      right: 0;
-    }
-    .app-window.preview-left .editor-panel {
-      left: 0;
-      right: 248px;
-    }
-    .app-window.preview-right .directory-view {
-      left: 0;
-      right: auto;
-    }
-    .app-window.preview-right .editor-panel {
-      left: 249px;
-      right: 0;
-    }
-    .directory-view, .editor-panel {
-      transition: left 220ms cubic-bezier(.22,1,.36,1), right 220ms cubic-bezier(.22,1,.36,1), width 220ms cubic-bezier(.22,1,.36,1);
-    }
-
-    /* v15 — 目录页作为固定锚点，预览页只在两侧切换 */
-    .app-window {
-      transition:
-        left 220ms cubic-bezier(.22,1,.36,1),
-        width 220ms cubic-bezier(.22,1,.36,1),
-        height 220ms cubic-bezier(.22,1,.36,1),
-        border-radius 220ms cubic-bezier(.22,1,.36,1),
-        background-color 180ms ease;
-    }
-    .app-window.dragging-window,
-    .app-window.switching-preview-side {
-      transition: none !important;
-    }
-    .app-window.switching-preview-side .directory-view,
-    .app-window.switching-preview-side .editor-panel {
-      transition: none !important;
-    }
-    .app-window.preview-left .editor-panel {
-      transform: translateX(-100%);
-    }
-    .app-window.preview-right .editor-panel {
-      transform: translateX(100%);
-    }
-    .app-window.preview-left .expanded-shell.preview-open .editor-panel,
-    .app-window.preview-right .expanded-shell.preview-open .editor-panel {
-      transform: translateX(0);
-    }
-
-
-    /* clean app-only mode: remove desktop preview background */
-    html, body {
-      background: transparent !important;
-    }
-    body {
-      overflow: hidden;
-    }
-    .desktop-copy,
-    .taskbar {
-      display: none !important;
-    }
-
-/* ============ Tauri app-mode overrides ============ */
-html, body {
-  background: transparent !important;
-  overflow: hidden;
-}
-.desktop-copy,
-.taskbar { display: none !important; }
-.app-window {
-  left: 0; top: 0; right: auto; bottom: auto;
-  width: 248px; height: 36px;
-}
-.app-window.expanded { height: 480px; }
-.app-window.expanded.preview-mode { width: min(720px, 100vw); }
-
-/* 透明窗口上 box-shadow 会在四角形成方形轮廓，移除 */
-.app-window,
-.app-window.expanded,
-.app-window.expanded.preview-mode {
-  box-shadow: none !important;
-}
-
-/* 默认不透明：窗口近不透明深色背景（须用半透明值，opaque 在透明窗口上不合成）
-   body 透明，四角圆角保留 */
-.app-window,
-.app-window.expanded,
-.app-window.expanded.preview-mode {
-  background: rgba(14, 18, 27, 0.95) !important;
-}
-html[data-theme="light"] .app-window,
-html[data-theme="light"] .app-window.expanded,
-html[data-theme="light"] .app-window.expanded.preview-mode {
-  background: rgba(240, 242, 248, 0.95) !important;
-}
-/* 透明模式：窗口半透明玻璃，透桌面但保留原有玻璃底色层次 */
-body.transparent-on .app-window,
-body.transparent-on .app-window.expanded,
-body.transparent-on .app-window.expanded.preview-mode {
-  background: var(--glass-strong);
-}
-html[data-theme="light"] body.transparent-on .app-window,
-html[data-theme="light"] body.transparent-on .app-window.expanded,
-html[data-theme="light"] body.transparent-on .app-window.expanded.preview-mode {
-  background: var(--glass-strong);
-}
-
-/* 预览区恒定实体背景，三区域层次 */
-.editor-panel {
-  background: var(--surface);
-}
-
-/* ===== 1192 轨道窗口：透明舞台 + 目录/编辑两个独立可读表面 ===== */
-/* 预览模式专用近不透明背景变量（不用普通玻璃的浅透明值） */
+/* ---------- 主题变量 ---------- */
 :root {
-  --preview-directory-bg: rgba(242, 243, 248, 0.97);
-  --preview-editor-bg: rgba(247, 248, 251, 0.985);
+  color-scheme: light;
+  --glass: rgba(242, 243, 248, 0.70);
+  --glass-strong: rgba(242, 243, 248, 0.80);
+  --surface: rgba(247, 248, 251, 0.86);
+  --surface-soft: rgba(0, 0, 0, 0.028);
+  --surface-hover: rgba(0, 0, 0, 0.062);
+  --surface-selected: rgba(108, 143, 255, 0.16);
+  --text: #18191f;
+  --text-secondary: #626572;
+  --text-tertiary: #858895;
+  --line: rgba(0, 0, 0, 0.07);
+  --line-strong: rgba(0, 0, 0, 0.10);
+  --accent: #6c8fff;
+  --accent-soft: rgba(108, 143, 255, 0.16);
+  --danger: #e85d67;
+  --warning: #b37b20;
+  --warning-bg: rgba(232, 169, 58, 0.10);
+  --shadow-window: 0 18px 48px rgba(0,0,0,.24), 0 2px 8px rgba(0,0,0,.14);
+  --shadow-menu: 0 14px 38px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.16);
+  --shadow: var(--shadow-window);
+  --menu-shadow: var(--shadow-menu);
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 590;
+  --fw-bold: 650;
 }
 html[data-theme="dark"] {
-  --preview-directory-bg: rgba(29, 32, 41, 0.96);
-  --preview-editor-bg: rgba(23, 26, 34, 0.98);
+  color-scheme: dark;
+  --glass: rgba(27, 30, 38, 0.56);
+  --glass-strong: rgba(29, 32, 41, 0.70);
+  --surface: rgba(23, 26, 34, 0.84);
+  --surface-soft: rgba(255,255,255,0.026);
+  --surface-hover: rgba(255,255,255,0.066);
+  --surface-selected: rgba(99,140,255,0.18);
+  --text: #e8e9ef;
+  --text-secondary: #9496a0;
+  --text-tertiary: #5e6070;
+  --line: rgba(255,255,255,0.065);
+  --line-strong: rgba(255,255,255,0.10);
+  --accent: #6c8fff;
+  --accent-soft: rgba(108,143,255,0.16);
+  --danger: #ff6b6b;
+  --warning: #e8a93a;
+  --warning-bg: rgba(232,169,58,0.10);
+  --shadow-window: 0 18px 48px rgba(0,0,0,.36), 0 2px 8px rgba(0,0,0,.22);
+  --shadow-menu: 0 14px 40px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.26);
+  --shadow: var(--shadow-window);
+  --menu-shadow: var(--shadow-menu);
 }
 
-/* 舞台本身完全不绘制：透明背景、无模糊、无阴影、无圆角、无边框 */
-.app-window.expanded.preview-mode,
-html[data-theme="light"] .app-window.expanded.preview-mode {
-  width: 1192px !important;
-  background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
+/* ---------- 基础 ---------- */
+* { box-sizing: border-box; }
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body {
+  font-family: "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 16% 14%, rgba(83,124,226,.25), transparent 36%),
+    radial-gradient(circle at 82% 20%, rgba(118,91,202,.18), transparent 40%),
+    linear-gradient(135deg, #0b0e15, #171c2a 52%, #0e121b);
 }
-.app-window.preview-mode::before {
-  display: none !important;
+html[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(108,143,255,.18), transparent 36%),
+    radial-gradient(circle at 82% 22%, rgba(161,138,229,.14), transparent 40%),
+    linear-gradient(135deg, #eef0f5, #e5e8f0 52%, #f1f2f6);
 }
+button, input, textarea { font: inherit; }
+button { color: inherit; }
+svg { display: block; width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.14) transparent; }
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.22); }
+html[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.14); }
 
-/* 上方栏 / 目录 / 编辑 三个独立界面：上方栏横跨合并面板随预览侧伸缩，目录与编辑对齐 */
+.desktop-copy { position: fixed; left: 30px; top: 30px; color: rgba(232,233,239,.84); text-shadow: 0 1px 16px rgba(0,0,0,.38); user-select: none; }
+html[data-theme="light"] .desktop-copy { color: rgba(24,25,31,.72); text-shadow: none; }
+.desktop-copy strong { display: block; font-size: 22px; font-weight: var(--fw-semibold); }
+.desktop-copy span { display: block; margin-top: 5px; font-size: 12px; color: var(--text-secondary); }
+.taskbar {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 50px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  background: rgba(12,14,20,.52); border-top: 1px solid rgba(255,255,255,.09);
+  backdrop-filter: blur(32px) saturate(1.2); -webkit-backdrop-filter: blur(32px) saturate(1.2);
+}
+html[data-theme="light"] .taskbar { background: rgba(235,237,243,.68); border-top-color: rgba(0,0,0,.08); }
+.task-icon { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.11); }
+.task-icon.active { background: linear-gradient(145deg, rgba(108,143,255,.36), rgba(255,255,255,.12)); }
 
-/* 上方栏：横跨合并面板（目录+编辑），随预览侧伸缩 */
-/* left 固定 472，开合靠 width，左右交换靠 transform —— 与编辑页同为 240ms 同缓动，保持同步 */
-.app-window.preview-mode .window-toolbar {
-  position: absolute;
-  top: 0;
-  left: 472px;
-  width: 720px;
-  height: 34px;
-  z-index: 4;
-  background: var(--preview-directory-bg);
-  border-radius: 14px 14px 0 0;
-  transform: translateX(0);
+/* ---------- 整体窗口布局 ---------- */
+.app-window {
+  position: fixed;
+  left: 0; top: 0; right: auto; bottom: auto;
+  width: 248px;
+  height: 36px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(14, 18, 27, 0.95);          /* 非透明模式：近不透明深色（opaque 在透明窗口不合成） */
+  box-shadow: var(--shadow-window);
+  backdrop-filter: blur(30px) saturate(1.34);
+  -webkit-backdrop-filter: blur(30px) saturate(1.34);
   transition:
-    left 220ms cubic-bezier(.22,1,.36,1),
     width 220ms cubic-bezier(.22,1,.36,1),
-    transform 240ms cubic-bezier(.22,1,.36,1),
-    border-radius 220ms ease;
+    height 220ms cubic-bezier(.22,1,.36,1),
+    border-radius 220ms cubic-bezier(.22,1,.36,1),
+    background-color 180ms ease;
+  z-index: 1100;
+  isolation: isolate;
 }
-.app-window.preview-right .window-toolbar { transform: translateX(0); }
-.app-window.preview-left .window-toolbar  { transform: translateX(-472px); }
+html[data-theme="light"] .app-window { background: rgba(240, 242, 248, 0.95); }
+/* 透明模式：半透明玻璃 */
+body.transparent-on .app-window { background: var(--glass-strong); }
+html[data-theme="light"] body.transparent-on .app-window { background: var(--glass-strong); }
 
-/* 内容区：从工具栏下方开始，目录与编辑对齐 */
-.app-window.preview-mode .window-content {
-  position: absolute;
-  top: 34px;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}
-
-/* 目录表面：固定 x=472 */
-.app-window.preview-mode .directory-view {
-  left: 472px !important;
-  right: auto !important;
-  width: 248px !important;
-  z-index: 2;
-  background: var(--preview-directory-bg);
-  border-radius: 0 0 0 14px;
-  transition: left 220ms cubic-bezier(.22,1,.36,1), border-radius 220ms ease;
-}
-.app-window.preview-left .directory-view {
-  border-radius: 0 0 14px 0;
-}
-
-/* 编辑表面：transform 滑动 */
-.app-window.preview-mode .editor-panel {
-  left: 0 !important;
-  right: auto !important;
-  width: 472px !important;
-  z-index: 1;
-  background: var(--preview-directory-bg);
-  border-radius: 0 0 14px 0;
-  transition: transform 240ms cubic-bezier(.22,1,.36,1), border-radius 220ms ease;
-}
-.app-window.preview-left .editor-panel {
-  transform: translateX(0) !important;
-  border-radius: 0 0 0 14px;
-}
-.app-window.preview-right .editor-panel {
-  transform: translateX(720px) !important;
-  border-radius: 0 0 14px 0;
-}
-
-/* 设置弹层跟随工具栏 */
-.app-window.preview-mode .settings-popover {
-  left: 472px;
-  right: auto;
-  top: 34px;
-  width: 276px;
-}
-
-/* 首次定位编辑器时禁用过渡，避免从另一侧滑过来的闪烁 */
-.no-preview-transition {
-  transition: none !important;
-}
-
-/* 方案2：打开预览时遮罩盖住窗口，resize 中间帧不可见，就位后淡出 */
-.app-window.preview-opening::after {
+.app-window::before {
   content: "";
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.13);
+  pointer-events: none;
+  z-index: 50;
+}
+.app-window.expanded { width: 248px; height: 480px; border-radius: 14px; }
+.app-window.preview-mode { width: 720px; height: 480px; border-radius: 14px; }
+.app-window.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* resize 中间帧遮罩（盖住 WebView2 新区域白屏） */
+.app-window::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
   z-index: 100;
-  background: var(--preview-directory-bg);
+  background: var(--surface);
+  opacity: 0;
   pointer-events: none;
   transition: opacity 150ms ease;
 }
-.app-window.preview-opening.preview-ready::after {
-  opacity: 0;
+.app-window.preview-opening::after,
+.app-window.preview-closing::after,
+.app-window.masking::after {
+  opacity: 1;
+  transition: none;
 }
 
-/* ===== 永久 1192 窗口：窗口恒宽不 resize，目录/工具栏/收起条固定 472，SetWindowRgn 决定可见 ===== */
-.app-window {
-  width: 1192px !important;
-  height: 480px !important;
-}
-.directory-view {
-  left: 472px !important;
-  right: auto !important;
-  width: 248px !important;
-}
-.app-window.expanded:not(.preview-mode) .window-toolbar {
-  position: absolute;
-  left: 472px;
-  top: 0;
-  width: 248px;
-  z-index: 4;
-}
-/* 展开态：内容区从工具栏下方填满窗口，目录(472)完整显示 */
-.app-window.expanded:not(.preview-mode) .window-content {
-  position: absolute;
-  top: 34px;
-  right: 0;
-  bottom: 0;
-  left: 0;
+/* ---------- 折叠条 / 展开壳 ---------- */
+.collapsed-bar, .expanded-shell {
+  position: absolute; inset: 0;
+  border-radius: inherit;
 }
 .collapsed-bar {
-  left: 472px !important;
-  right: auto !important;
-  width: 248px !important;
+  height: 36px;
+  display: flex; align-items: center;
+  padding: 0 8px 0 10px; gap: 6px;
+  opacity: 1; visibility: visible;
+  transition: opacity 90ms ease, visibility 0s linear 0s;
+  user-select: none;
+}
+.expanded .collapsed-bar {
+  opacity: 0; visibility: hidden;
+  transition: opacity 70ms ease, visibility 0s linear 70ms;
+}
+.collapsed-brand { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 6px; cursor: grab; }
+.collapsed-brand:active { cursor: grabbing; }
+
+.expanded-shell {
+  display: grid;
+  grid-template-rows: 34px 1fr;
+  opacity: 0; visibility: hidden;
+  transform: translateY(3px);
+  transition: opacity 110ms ease, transform 180ms cubic-bezier(.22,1,.36,1), visibility 0s linear 180ms;
+  overflow: hidden;
+}
+.expanded .expanded-shell {
+  opacity: 1; visibility: visible; transform: translateY(0);
+  transition: opacity 130ms ease 55ms, transform 200ms cubic-bezier(.22,1,.36,1), visibility 0s;
 }
 
-/* ===== 收起预览动画（必须放在最末尾：覆盖 preview-right/left 同优先级的 transform，并覆盖 preview-mode 的 transition） ===== */
-.app-window.preview-closing .editor-panel {
-  /* preview-right 收起：向左滑过目录，滑出窗口左缘；z-index 3 盖过目录(2)、低于上方栏(4) */
-  transform: translateX(0) !important;
-  opacity: 0 !important;
-  z-index: 3 !important;
-  pointer-events: none;
-  transition: transform 240ms cubic-bezier(.22,1,.36,1), opacity 160ms ease !important;
+.window-toolbar {
+  height: 34px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 8px 0 14px;
+  user-select: none; cursor: grab;
 }
-.app-window.preview-closing.preview-left .editor-panel {
-  transform: translateX(720px) !important;
+.window-toolbar:active { cursor: grabbing; }
+.toolbar-brand { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: var(--fw-semibold); }
+.toolbar-actions { display: flex; align-items: center; gap: 2px; }
+
+/* ---------- 内容区：目录 + 编辑（整体 flex，交换瞬间翻转 order） ---------- */
+.window-content {
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
 }
-.app-window.preview-closing .window-toolbar {
-  width: 248px !important;
-  transform: translateX(0) !important;
-  transition: width 240ms cubic-bezier(.22,1,.36,1), transform 240ms cubic-bezier(.22,1,.36,1) !important;
+.directory-view {
+  flex: 0 0 248px;
+  min-width: 0;
+  display: flex;
+  border-right: 1px solid var(--line);
 }
+.preview-left .directory-view { order: 2; border-right: 0; border-left: 1px solid var(--line); }
+.editor-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--surface);
+}
+.preview-mode .editor-panel { display: flex; }
+.preview-left .editor-panel { order: 1; }
+
+/* ---------- 组件 ---------- */
+.brand-mark {
+  width: 17px; height: 17px; border-radius: 5px;
+  display: grid; place-items: center;
+  color: var(--accent); background: var(--accent-soft);
+  flex: 0 0 auto;
+}
+.brand-mark svg { width: 11px; height: 11px; stroke-width: 1.9; }
+.collapsed-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: var(--fw-medium); color: var(--text); }
+
+.icon-button {
+  width: 28px; height: 28px; flex: 0 0 28px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 7px; padding: 0;
+  background: transparent; color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 110ms ease, color 110ms ease, transform 80ms ease;
+}
+.icon-button svg { width: 16px; height: 16px; stroke-width: 1.6; }
+.icon-button:hover { color: var(--text); background: var(--surface-hover); }
+.icon-button:active { transform: scale(.92); background: var(--surface-selected); }
+.icon-button:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.icon-button.toggle-active { color: var(--accent); background: transparent; }
+.icon-button.toggle-active svg { transform: scale(1.05); }
+
+/* 目录 */
+.list-panel {
+  min-width: 0; min-height: 0; width: 100%; flex: 1;
+  display: flex; flex-direction: column;
+  padding: 8px 0 0;
+  background: rgba(0,0,0,.025);
+}
+html[data-theme="dark"] .list-panel { background: rgba(255,255,255,.012); }
+.search-box {
+  height: 28px; margin: 0 10px;
+  display: flex; align-items: center; gap: 6px;
+  border-radius: 8px; padding: 0 9px;
+  color: var(--text-tertiary); background: var(--surface-soft);
+  border: 1px solid transparent;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+.search-box:focus-within { box-shadow: 0 0 0 2.5px rgba(108,143,255,.22); border-color: rgba(108,143,255,.42); background: var(--surface); }
+.search-box svg { width: 13px; height: 13px; stroke-width: 1.6; flex: 0 0 auto; }
+.search-box input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 12px; }
+.search-box input::placeholder { color: var(--text-tertiary); }
+.filter-row { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; color: var(--text-secondary); }
+.filter-button { display: inline-flex; align-items: center; gap: 4px; border: 0; padding: 4px 5px; border-radius: 6px; background: transparent; color: inherit; font-size: 11px; cursor: pointer; }
+.filter-button:hover { color: var(--text); background: var(--surface-hover); }
+.filter-button svg { width: 11px; height: 11px; stroke-width: 1.6; }
+.draft-list { min-height: 0; flex: 1; overflow: auto; padding: 0 6px 10px; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.group-label { height: 22px; display: flex; align-items: center; padding: 0 8px; color: var(--text-tertiary); font-size: 9.5px; font-weight: var(--fw-bold); letter-spacing: .08em; text-transform: uppercase; }
+.group-divider { height: 1px; margin: 4px 8px; background: var(--line); }
+.draft-row {
+  width: 100%; height: 52px;
+  display: grid;
+  grid-template-columns: 14px minmax(0,1fr) auto 16px;
+  grid-template-rows: 25px 20px;
+  align-items: center;
+  column-gap: 5px;
+  padding: 5px 9px 5px 8px;
+  border: 0; border-radius: 7px; margin-bottom: 1px;
+  background: transparent; color: var(--text);
+  text-align: left; cursor: default;
+  transition: background-color 110ms ease, transform 120ms ease;
+}
+.draft-row:hover { background: var(--surface-hover); }
+.draft-row.selected { background: var(--surface-selected); }
+.draft-row.dragging { opacity: .38; filter: blur(1px); }
+.draft-row.drop-target { box-shadow: inset 0 2px 0 var(--accent); }
+.draft-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pin-slot { grid-row: 1 / 3; color: var(--accent); opacity: .9; }
+.pin-slot svg { width: 11px; height: 11px; stroke-width: 1.6; margin: auto; }
+.pin-slot.empty { opacity: .16; }
+.draft-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: var(--fw-semibold); align-self: end; }
+.draft-time { font-size: 10px; font-weight: var(--fw-regular); color: var(--text-tertiary); align-self: end; }
+.draft-preview { grid-column: 2 / 4; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; line-height: 1.3; color: var(--text-secondary); align-self: start; }
+.drag-handle {
+  grid-column: 4; grid-row: 1 / 3;
+  display: grid; place-items: center;
+  color: var(--text-tertiary); opacity: 0; cursor: grab;
+  transition: opacity 110ms ease;
+}
+.draft-row:hover .drag-handle, .draft-row:focus-visible .drag-handle { opacity: .72; }
+.drag-handle:active { cursor: grabbing; }
+.drag-handle svg { width: 13px; height: 13px; stroke-width: 1.6; }
+.empty-list { height: 100%; display: grid; place-content: center; justify-items: center; padding: 24px; text-align: center; color: var(--text-secondary); }
+.empty-icon { width: 52px; height: 52px; display: grid; place-items: center; margin-bottom: 12px; border-radius: 14px; color: var(--accent); background: rgba(108,143,255,.12); border: 1px solid rgba(108,143,255,.18); opacity: .72; }
+.empty-icon svg { width: 22px; height: 22px; stroke-width: 1.6; }
+.empty-list strong { font-size: 13px; font-weight: var(--fw-semibold); }
+.empty-list span { margin-top: 6px; font-size: 11px; color: var(--text-tertiary); }
+
+/* 编辑器 */
+.editor-header {
+  min-height: 44px;
+  display: flex; align-items: center;
+  padding: 0 10px 0 18px; gap: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.title-input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 15px; font-weight: var(--fw-bold); }
+.save-status { flex: 0 0 auto; font-size: 10.5px; font-weight: var(--fw-regular); color: var(--text-tertiary); transition: color 150ms ease, opacity 180ms ease; }
+.save-status.saving { color: var(--accent); }
+.save-status.error { color: var(--danger); }
+.conflict-banner {
+  min-height: 38px; display: none; align-items: center; gap: 8px;
+  padding: 0 12px 0 14px;
+  color: var(--warning); background: var(--warning-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--warning) 18%, transparent);
+  font-size: 11.5px;
+}
+.conflict-banner.show { display: flex; }
+.conflict-banner svg { width: 14px; height: 14px; stroke-width: 1.6; }
+.conflict-banner span { flex: 1; color: var(--text); }
+.text-button { border: 0; padding: 4px 6px; border-radius: 5px; background: transparent; color: var(--accent); font-size: 11.5px; cursor: pointer; }
+.text-button:hover { background: var(--surface-hover); }
+.text-button.muted { color: var(--text-secondary); }
+.editor-wrap { min-height: 0; flex: 1; padding: 12px 24px 24px; }
+.editor {
+  width: 100%; height: 100%;
+  resize: none; border: 0; outline: 0; padding: 0;
+  color: var(--text); caret-color: var(--accent); background: transparent;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13.5px; line-height: 1.75;
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.editor::placeholder { color: var(--text-tertiary); }
+
+/* 弹层 / 菜单 */
+.popover, .context-menu {
+  position: absolute; z-index: 1200;
+  border: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--glass-strong) 92%, transparent);
+  box-shadow: var(--shadow-menu);
+  backdrop-filter: blur(36px) saturate(1.38); -webkit-backdrop-filter: blur(36px) saturate(1.38);
+  opacity: 0; visibility: hidden;
+  transform: translateY(-4px) scale(.985);
+  transform-origin: top right;
+  transition: opacity 135ms ease, transform 160ms cubic-bezier(.22,1,.36,1), visibility 0s linear 160ms;
+}
+.popover.show, .context-menu.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); transition: opacity 135ms ease, transform 160ms cubic-bezier(.22,1,.36,1), visibility 0s; }
+.settings-popover { top: 38px; right: 8px; width: min(276px, calc(100% - 16px)); max-height: min(400px, calc(100% - 48px)); overflow: auto; border-radius: 12px; padding: 12px; }
+.settings-section + .settings-section { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.settings-label { margin: 0 4px 4px; color: var(--text-tertiary); font-size: 9.5px; font-weight: var(--fw-bold); letter-spacing: .09em; text-transform: uppercase; }
+.setting-row { min-height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 4px; font-size: 12px; }
+.setting-row > span:first-child { flex: 1; }
+.segmented { height: 26px; display: flex; padding: 2px; border-radius: 8px; background: var(--surface-soft); }
+.segmented button { height: 22px; min-width: 42px; border: 0; padding: 0 7px; border-radius: 6px; background: transparent; color: var(--text-secondary); font-size: 11px; font-weight: var(--fw-medium); cursor: pointer; }
+.segmented button.active { color: var(--text); background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.switch { width: 32px; height: 18px; position: relative; border: 0; border-radius: 999px; padding: 0; background: var(--line-strong); cursor: pointer; transition: background-color 140ms ease; }
+.switch::after { content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.28); transition: transform 150ms cubic-bezier(.22,1,.36,1); }
+.switch.on { background: var(--accent); }
+.switch.on::after { transform: translateX(14px); }
+.path { max-width: 145px; display: inline-flex; align-items: center; gap: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 11px; }
+.path svg { width: 11px; height: 11px; stroke-width: 1.6; flex: 0 0 auto; }
+.demo-button { width: 100%; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-soft); color: var(--text-secondary); font-size: 11px; cursor: pointer; }
+.demo-button:hover { color: var(--text); background: var(--surface-hover); }
+
+.context-menu { width: 188px; border-radius: 10px; padding: 5px; transform-origin: top left; }
+.menu-item { width: 100%; height: 30px; display: grid; grid-template-columns: 20px 1fr auto; align-items: center; border: 0; border-radius: 6px; padding: 0 8px; background: transparent; color: var(--text); font-size: 12px; text-align: left; cursor: pointer; }
+.menu-item:hover { background: var(--surface-hover); }
+.menu-item svg { width: 14px; height: 14px; stroke-width: 1.6; color: var(--text-secondary); }
+.menu-item kbd { color: var(--text-tertiary); font: 10.5px "Inter Variable", sans-serif; }
+.menu-item.danger { color: var(--danger); }
+.menu-item.danger svg { color: var(--danger); }
+.menu-separator { height: 1px; margin: 4px 6px; background: var(--line); }
+
+.modal-layer { position: absolute; inset: 0; z-index: 1300; display: grid; place-items: center; border-radius: inherit; background: rgba(0,0,0,.46); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: opacity 130ms ease, visibility 0s linear 130ms; }
+.modal-layer.show { opacity: 1; visibility: visible; transition: opacity 130ms ease, visibility 0s; }
+.dialog { width: min(320px, calc(100% - 32px)); border-radius: 14px; padding: 22px; background: var(--surface); box-shadow: var(--menu-shadow); transform: scale(.97); transition: transform 170ms cubic-bezier(.22,1,.36,1); }
+.modal-layer.show .dialog { transform: scale(1); }
+.dialog h2 { margin: 0; font-size: 14px; font-weight: var(--fw-bold); line-height: 1.2; }
+.dialog p { margin: 8px 0 20px; color: var(--text-secondary); font-size: 12px; line-height: 1.55; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.dialog-button { min-width: 96px; height: 32px; border: 0; border-radius: 8px; background: var(--surface-hover); color: var(--text); font-size: 12px; font-weight: var(--fw-semibold); cursor: pointer; }
+.dialog-button.danger { background: var(--danger); color: white; }
+
+.toast { position: absolute; left: 50%; bottom: 14px; z-index: 1400; min-width: 100px; max-width: 280px; height: 30px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; border-radius: 20px; color: rgba(235,236,242,.96); background: rgba(28,30,38,.88); box-shadow: 0 6px 20px rgba(0,0,0,.38); backdrop-filter: blur(20px); font-size: 12px; font-weight: var(--fw-medium); opacity: 0; visibility: hidden; transform: translate(-50%, 6px); transition: opacity 150ms ease, transform 180ms cubic-bezier(.22,1,.36,1), visibility 0s linear 180ms; }
+.toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition: opacity 150ms ease, transform 180ms cubic-bezier(.22,1,.36,1), visibility 0s; }
+.toast svg { width: 13px; height: 13px; stroke-width: 1.6; }
+
+/* 窗口右键菜单 */
+.window-context-menu { right: 0; bottom: 42px; left: auto; top: auto; transform-origin: bottom right; }
+.window-context-menu .menu-item kbd { min-width: 14px; text-align: center; color: var(--accent); font-family: inherit; font-weight: var(--fw-semibold); }
+
+/* 辅助 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; scroll-behavior: auto !important; }
+}
+
+/* ---------- Tauri app-mode ---------- */
+html, body { background: transparent !important; overflow: hidden; }
+.desktop-copy, .taskbar { display: none !important; }
