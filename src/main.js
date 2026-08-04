@@ -359,29 +359,39 @@ async function openPreview(id, focusEditor = false) {
   clearTimeout(previewCloseTimer);
   appEl.classList.remove('preview-closing');
   // 首次展开：按屏幕距离选方向（编辑放在不会超出屏幕边缘的一侧）
+  let side = 'right';
   try {
     const monitor = await currentMonitor();
     if (monitor) {
       const scale = monitor.scaleFactor;
       const pos = await win.outerPosition();
       const dirScreenLeft = pos.x;
-      const previewWinLeft = dirScreenLeft - DIR_CENTER * scale;
-      const editRight = previewWinLeft + (DIR_CENTER + DIR_W + EDIT_W) * scale;
-      previewSide = 'right';
-      if (editRight > monitor.position.x + monitor.size.width) previewSide = 'left';
+      const editRight = dirScreenLeft + (DIR_CENTER + DIR_W + EDIT_W) * scale;
+      side = 'right';
+      if (editRight > monitor.position.x + monitor.size.width) side = 'left';
     }
   } catch (e) {}
-  appEl.classList.toggle('preview-left', previewSide === 'left');
-  appEl.classList.toggle('preview-right', previewSide === 'right');
-  appEl.classList.add('preview-mode');
-  expandedShell.classList.add('preview-open');
-  // 首次定位编辑器：禁用过渡，直接出现在目标侧，避免"从另一侧滑过来"的闪烁
-  const editorPanel = document.querySelector('.editor-panel');
-  editorPanel.classList.add('no-preview-transition');
-  await resizeWindow();
+  previewSide = side;
+  // 第 1 步：先 resize 到 1192 + 左移保持目录屏幕位置（目录仍是展开态在窗口 0，不跳、不溢出窗口）
+  const monitor = await currentMonitor();
+  const scale = monitor ? monitor.scaleFactor : 1;
+  const pos = await win.outerPosition();
+  const dirScreenLeft = pos.x;
+  const newX = dirScreenLeft - DIR_CENTER * scale;
+  await win.setSize(new LogicalSize(WINDOW_SIZE.preview.w, WINDOW_SIZE.preview.h));
+  if (newX !== pos.x) await win.setPosition(new PhysicalPosition(newX, pos.y));
+  // 第 2 步：下一帧加预览类——目录从 0 平滑滑到 472，编辑器无过渡直接定位目标侧
   requestAnimationFrame(() => {
-    editorPanel.classList.remove('no-preview-transition');
-    if (focusEditor) editor.focus();
+    const editorPanel = document.querySelector('.editor-panel');
+    editorPanel.classList.add('no-preview-transition');
+    appEl.classList.toggle('preview-left', previewSide === 'left');
+    appEl.classList.toggle('preview-right', previewSide === 'right');
+    appEl.classList.add('preview-mode');
+    expandedShell.classList.add('preview-open');
+    requestAnimationFrame(() => {
+      editorPanel.classList.remove('no-preview-transition');
+      if (focusEditor) editor.focus();
+    });
   });
 }
 
