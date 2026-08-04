@@ -947,3 +947,8 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
   top: 34px;
   width: 276px;
 }
+
+/* 首次定位编辑器时禁用过渡，避免从另一侧滑过来的闪烁 */
+.no-preview-transition {
+  transition: none !important;
+}

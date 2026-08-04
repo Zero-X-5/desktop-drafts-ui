@@ -351,16 +351,21 @@ async function collapse() {
 
 async function openPreview(id, focusEditor = false) {
   await selectDraft(id);
+  // 已在预览态：保持当前方向与布局，只切换内容（避免重新算方向导致错乱/闪烁）
+  if (isPreviewOpen()) {
+    if (focusEditor) editor.focus();
+    return;
+  }
   clearTimeout(previewCloseTimer);
   appEl.classList.remove('preview-closing');
-  // 展开方向：默认编辑在右（preview-right）；若编辑区会超出当前显示器右缘则编辑在左
+  // 首次展开：按屏幕距离选方向（编辑放在不会超出屏幕边缘的一侧）
   try {
     const monitor = await currentMonitor();
     if (monitor) {
       const scale = monitor.scaleFactor;
       const pos = await win.outerPosition();
-      const dirScreenLeft = pos.x;                              // 展开前目录=窗口左缘
-      const previewWinLeft = dirScreenLeft - DIR_CENTER * scale; // 展开后窗口左缘（目录保持）
+      const dirScreenLeft = pos.x;
+      const previewWinLeft = dirScreenLeft - DIR_CENTER * scale;
       const editRight = previewWinLeft + (DIR_CENTER + DIR_W + EDIT_W) * scale;
       previewSide = 'right';
       if (editRight > monitor.position.x + monitor.size.width) previewSide = 'left';
@@ -370,8 +375,14 @@ async function openPreview(id, focusEditor = false) {
   appEl.classList.toggle('preview-right', previewSide === 'right');
   appEl.classList.add('preview-mode');
   expandedShell.classList.add('preview-open');
+  // 首次定位编辑器：禁用过渡，直接出现在目标侧，避免"从另一侧滑过来"的闪烁
+  const editorPanel = document.querySelector('.editor-panel');
+  editorPanel.classList.add('no-preview-transition');
   await resizeWindow();
-  if (focusEditor) requestAnimationFrame(() => editor.focus());
+  requestAnimationFrame(() => {
+    editorPanel.classList.remove('no-preview-transition');
+    if (focusEditor) editor.focus();
+  });
 }
 
 async function closePreview() {
