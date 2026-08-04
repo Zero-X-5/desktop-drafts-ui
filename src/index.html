@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>拾笺</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5V8h4M8 12h7M8 16h6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9.5 14.5L3 21" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.00007 9.48528L14.1925 18.6777L15.8895 16.9806L15.4974 13.1944L21.0065 8.5211L15.1568 2.67141L10.4834 8.18034L6.69713 7.78823L5.00007 9.48528Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M13.5 6.5 17.5 10.5M4 20l4.2-1 10.3-10.3a2.1 2.1 0 0 0-3-3L5.2 16 4 20Z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5h7l2-2h9v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-11Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 4 3.5 19h17L12 4Z"/><path d="M12 9v4M12 16.5v.1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4 4 10-10"/></symbol>
+    <symbol id="i-bring-front" viewBox="0 0 24 24">
+      <path fill="currentColor" stroke="none" d="M8.66784 19.2731L9.67371 17.5309C12.4214 18.6911 15.6673 17.6497 17.1971 15C17.6099 14.2851 17.8588 13.5206 17.9555 12.75H19.9677C19.8637 13.8618 19.5241 14.9695 18.9292 16C18.5267 16.6971 18.035 17.3108 17.477 17.8349C16.8385 17.6413 16.1244 17.7022 15.501 18.0621C14.8783 18.4216 14.4688 19.0086 14.3168 19.6575C12.4998 20.2066 10.4923 20.1118 8.66784 19.2731ZM7.3688 18.5231C5.73024 17.3624 4.64445 15.6713 4.21148 13.8232C4.69743 13.3671 5.00098 12.719 5.00098 12C5.00098 11.2801 4.69669 10.6312 4.20973 10.1751C4.38459 9.42975 4.67025 8.69715 5.07277 7.99995C5.66768 6.96954 6.4572 6.12154 7.3681 5.47557L8.3742 7.2182C7.75517 7.68729 7.21755 8.28509 6.80482 8.99995C5.27497 11.6497 5.996 14.9814 8.37467 16.7809L7.3688 18.5231ZM8.66779 4.72671C10.4122 3.92909 12.4225 3.76619 14.3163 4.34045C14.4679 4.99011 14.8776 5.57789 15.501 5.93778C16.1243 6.29766 16.8382 6.3586 17.4766 6.16508C18.9209 7.51805 19.785 9.34047 19.9664 11.25H17.9542C17.7265 9.45286 16.6908 7.77941 15.001 6.8038C13.3112 5.82819 11.3441 5.76797 9.67386 6.46927L8.66779 4.72671Z"/>
+      <path fill="currentColor" stroke="none" d="M16.001 5.07175C15.2835 4.65754 15.0377 3.74015 15.4519 3.02271C15.8662 2.30527 16.7835 2.05946 17.501 2.47367C18.2184 2.88789 18.4642 3.80527 18.05 4.52271C17.6358 5.24015 16.7184 5.48596 16.001 5.07175ZM4.00098 12C4.00098 12.8284 3.3294 13.5 2.50098 13.5C1.67255 13.5 1.00098 12.8284 1.00098 12C1.00098 11.1715 1.67255 10.5 2.50098 10.5C3.3294 10.5 4.00098 11.1715 4.00098 12ZM16.001 18.9282C16.7184 18.5139 17.6358 18.7598 18.05 19.4772C18.4642 20.1946 18.2184 21.112 17.501 21.5262C16.7835 21.9404 15.8662 21.6946 15.4519 20.9772C15.0377 20.2598 15.2835 19.3424 16.001 18.9282Z"/>
+    </symbol>
+    <symbol id="i-settings-custom" viewBox="0 0 64 64">
+      <path fill="currentColor" stroke="none" d="M29.054688 10C27.715688 10 26.571703 10.964203 26.345703 12.283203L25.763672 15.664062C25.457672 15.781062 25.152469 15.902156 24.855469 16.035156L22.058594 14.058594C20.830594 13.209594 19.383344 13.520328 18.527344 14.361328L14.361328 18.525391C13.414328 19.472391 13.288547 20.962641 14.060547 22.056641L16.035156 24.855469C15.901156 25.152469 15.781063 25.455719 15.664062 25.761719L12.283203 26.34375C10.963203 26.57075 10 27.715688 10 29.054688V34.945312C10 36.284312 10.964203 37.428297 12.283203 37.654297L15.664062 38.236328C15.781062 38.542328 15.902156 38.847531 16.035156 39.144531L14.058594 41.941406C13.286594 43.034406 13.414328 44.525656 14.361328 45.472656L18.525391 49.638672C19.609391 50.698672 21.124641 50.614453 22.056641 49.939453L24.855469 47.964844C25.152469 48.098844 25.455719 48.218938 25.761719 48.335938L26.34375 51.716797C26.57075 53.036797 27.715688 54 29.054688 54H34.945312C36.284312 54 37.428297 53.035797 37.654297 51.716797L38.236328 48.335938C38.542328 48.218937 38.847531 48.097844 39.144531 47.964844L41.941406 49.941406C42.766406 50.549406 44.343656 50.768672 45.472656 49.638672L49.638672 45.474609C50.585672 44.527609 50.711453 43.037359 49.939453 41.943359L47.964844 39.144531C48.098844 38.847531 48.218938 38.544281 48.335938 38.238281L51.716797 37.65625C53.036797 37.42925 54 36.284312 54 34.945312V29.054688C54 27.715688 53.035797 26.571703 51.716797 26.345703L48.335938 25.763672C48.218937 25.457672 48.097844 25.152469 47.964844 24.855469L49.941406 22.058594C50.713406 20.965594 50.585672 19.474344 49.638672 18.527344L45.474609 14.361328C44.417609 13.329328 42.952359 13.351547 41.943359 14.060547L39.144531 16.035156C38.847531 15.901156 38.544281 15.781063 38.238281 15.664062L37.65625 12.283203C37.42925 10.963203 36.284312 10 34.945312 10ZM30.214844 14H33.787109C33.848109 14 33.900156 14.043516 33.910156 14.103516L34.681641 18.589844C36.449641 19.224844 38.104844 19.894141 39.589844 20.619141L43.302734 17.996094C43.352734 17.961094 43.421844 17.966766 43.464844 18.009766L45.990234 20.537109C46.033234 20.580109 46.040859 20.647266 46.005859 20.697266L43.380859 24.412109C44.139859 26.017109 44.824156 27.649359 45.410156 29.318359L49.896484 30.091797C49.956484 30.101797 50 30.153844 50 30.214844V33.787109C50 33.848109 49.955531 33.900156 49.894531 33.910156L45.410156 34.681641C44.825156 36.350641 44.148859 37.985844 43.380859 39.589844L46.005859 43.304688C46.040859 43.354688 46.033234 43.421844 45.990234 43.464844L43.464844 45.992188C43.421844 46.035187 43.352734 46.040859 43.302734 46.005859L39.589844 43.382812C37.949844 44.153812 36.313641 44.829109 34.681641 45.412109L33.908203 49.896484C33.898203 49.956484 33.846156 50 33.785156 50H30.212891C30.151891 50 30.099844 49.955531 30.089844 49.894531L29.318359 45.410156C27.709359 44.851156 26.075156 44.184859 24.410156 43.380859L20.695312 46.005859C20.645312 46.040859 20.578156 46.033234 20.535156 45.990234L18.007812 43.464844C17.964813 43.421844 17.959141 43.352734 17.994141 43.302734L20.617188 39.589844C19.838187 37.924844 19.161891 36.288641 18.587891 34.681641L14.103516 33.908203C14.043516 33.898203 14 33.846156 14 33.785156V30.212891C14 30.151891 14.043516 30.100844 14.103516 30.089844L18.589844 29.316406C19.170844 27.680406 19.837141 26.045156 20.619141 24.410156L17.994141 20.695312C17.959141 20.645312 17.966766 20.578156 18.009812 20.535156L20.535156 18.007812C20.578156 17.964813 20.647266 17.959141 20.697266 17.994141L24.410156 20.617188C25.958156 19.874187 27.599359 19.201891 29.318359 18.587891L30.091797 14.103516C30.101797 14.043516 30.153844 14 30.214844 14ZM32 23C27.029 23 23 27.029 23 32S27.029 41 32 41 41 36.971 41 32 36.971 23 32 23ZM32 27C34.761 27 37 29.239 37 32S34.761 37 32 37 27 34.761 27 32 29.239 27 32 27Z"/>
+    </symbol>
+  </svg>
+
+  <main class="app-window" id="appWindow" aria-label="拾笺">
+    <section class="collapsed-bar" id="collapsedBar">
+      <div class="collapsed-brand" id="dragZone" title="双击展开，拖动移动">
+        <span class="brand-mark"><svg><use href="#i-note"/></svg></span>
+        <span class="collapsed-title" id="collapsedTitle">拾笺</span>
+      </div>
+      <button class="icon-button" id="collapsedHideButton" title="隐藏到任务栏"><svg><use href="#i-minus"/></svg></button>
+    </section>
+
+    <section class="expanded-shell">
+      <header class="window-toolbar" id="windowToolbar">
+        <div class="toolbar-brand"><span class="brand-mark"><svg><use href="#i-note"/></svg></span><span>拾笺</span></div>
+        <div class="toolbar-actions">
+          <button class="icon-button" id="topmostButton" title="保持在最前" aria-label="保持在最前" aria-pressed="false"><svg><use href="#i-bring-front"/></svg></button>
+          <button class="icon-button" id="settingsButton" title="设置"><svg><use href="#i-settings-custom"/></svg></button>
+          <button class="icon-button" id="hideButton" title="隐藏到任务栏"><svg><use href="#i-minus"/></svg></button>
+        </div>
+      </header>
+
+      <div class="window-content">
+        <div class="directory-view" id="directoryView">
+          <aside class="list-panel">
+            <label class="search-box"><svg><use href="#i-search"/></svg><input id="searchInput" placeholder="搜索草稿…" /></label>
+            <div class="filter-row"><button class="filter-button" id="addButton">＋ 新建</button></div>
+            <div class="draft-list" id="draftList"></div>
+          </aside>
+        </div>
+        <section class="editor-panel">
+          <header class="editor-header">
+            <input class="title-input" id="titleInput" aria-label="文件名" />
+            <span class="save-status" id="saveStatus">已保存</span>
+            <button class="icon-button" id="copyCurrentButton" title="复制正文" aria-label="复制正文"><svg><use href="#i-copy"/></svg></button>
+          </header>
+          <div class="conflict-banner" id="conflictBanner">
+            <svg><use href="#i-warning"/></svg><span>文件已被外部修改</span>
+            <button class="text-button" id="reloadButton">重新加载</button>
+            <button class="text-button muted" id="ignoreButton">忽略</button>
+          </div>
+          <div class="editor-wrap"><textarea class="editor" id="editor" placeholder="开始写点什么…"></textarea></div>
+        </section>
+      </div>
+
+      <aside class="popover settings-popover" id="settingsPopover">
+        <section class="settings-section">
+          <div class="settings-label">外观</div>
+          <div class="setting-row"><span>主题</span><div class="segmented" id="themeSegment"><button data-theme="light">浅色</button><button data-theme="dark" class="active">深色</button><button data-theme="auto">自动</button></div></div>
+          <div class="setting-row"><span>字体</span><span class="path">等宽字体 <svg><use href="#i-chevron-down"/></svg></span></div>
+        </section>
+        <section class="settings-section">
+          <div class="settings-label">行为</div>
+          <div class="setting-row"><span>保持在最前</span><button class="switch" id="topmostSwitch" aria-label="保持在最前" aria-pressed="false"></button></div>
+          <div class="setting-row"><span>开机自启</span><button class="switch" id="autostartSwitch"></button></div>
+          <div class="setting-row"><span>快捷唤起</span><button class="switch on" id="hotkeySwitch"></button></div>
+          <div class="setting-row"><span>自动保存</span><button class="switch on" id="autoSaveSwitch"></button></div>
+          <div class="setting-row"><span>透明模式</span><button class="switch" id="transparentSwitch"></button></div>
+        </section>
+        <section class="settings-section">
+          <div class="settings-label">文件</div>
+          <div class="setting-row"><span>编码</span><span class="path">UTF-8 <svg><use href="#i-chevron-down"/></svg></span></div>
+          <div class="setting-row"><span>存储路径</span><span class="path" id="storePathDisplay">C:\文档\拾笺 →</span></div>
+        </section>
+        <section class="settings-section">
+          <button class="demo-button" id="conflictDemoButton">演示外部修改冲突</button>
+        </section>
+      </aside>
+
+      <div class="context-menu" id="contextMenu">
+        <button class="menu-item" data-action="pin"><svg><use href="#i-pin"/></svg><span id="pinActionLabel">置顶</span><kbd>Ctrl+P</kbd></button>
+        <button class="menu-item" data-action="rename"><svg><use href="#i-edit"/></svg><span>重命名</span><kbd>F2</kbd></button>
+        <button class="menu-item" data-action="copy"><svg><use href="#i-copy"/></svg><span>复制内容</span><kbd>Ctrl+C</kbd></button>
+        <button class="menu-item" data-action="folder"><svg><use href="#i-folder"/></svg><span>打开文件夹</span><kbd></kbd></button>
+        <div class="menu-separator"></div>
+        <button class="menu-item danger" data-action="delete"><svg><use href="#i-trash"/></svg><span>移到回收站</span><kbd>Del</kbd></button>
+      </div>
+
+      <div class="modal-layer" id="modalLayer">
+        <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="deleteTitle">
+          <h2 id="deleteTitle">删除草稿</h2>
+          <p id="deleteText">“文件名.txt”将被移动到系统回收站。</p>
+          <div class="dialog-actions"><button class="dialog-button" id="cancelDelete">取消</button><button class="dialog-button danger" id="confirmDelete">移到回收站</button></div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"><svg><use href="#i-check"/></svg><span id="toastText">已保存</span></div>
+    </section>
+
+    <div class="context-menu window-context-menu" id="windowContextMenu">
+      <button class="menu-item" data-window-action="topmost"><svg><use href="#i-bring-front"/></svg><span id="windowTopmostLabel">保持在最前</span><kbd id="windowTopmostCheck"></kbd></button>
+      <button class="menu-item" data-window-action="expand"><svg><use href="#i-note"/></svg><span>展开目录</span><kbd></kbd></button>
+      <button class="menu-item" data-window-action="new"><svg><use href="#i-plus"/></svg><span>新建草稿</span><kbd></kbd></button>
+      <button class="menu-item" data-window-action="hide"><svg><use href="#i-minus"/></svg><span>隐藏到任务栏</span><kbd></kbd></button>
+    </div>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
