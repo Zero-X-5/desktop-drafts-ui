@@ -859,7 +859,8 @@ html[data-theme="light"] body.transparent-on .app-window.expanded.preview-mode {
 }
 
 /* ===== 1192 轨道窗口（原型）：目录恒居中，编辑 CSS transform 滑动，不移动窗口 ===== */
-.app-window.expanded.preview-mode {
+.app-window.expanded.preview-mode,
+html[data-theme="light"] .app-window.expanded.preview-mode {
   width: 1192px !important;
   background: transparent !important;
 }
