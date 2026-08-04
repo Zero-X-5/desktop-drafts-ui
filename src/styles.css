@@ -893,6 +893,7 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
   z-index: 4;
   background: var(--preview-directory-bg);
   border-radius: 14px 14px 0 0;
+  transition: left 220ms cubic-bezier(.22,1,.36,1), width 220ms cubic-bezier(.22,1,.36,1), border-radius 220ms ease;
 }
 .app-window.preview-right .window-toolbar { left: 472px; width: 720px; }
 .app-window.preview-left .window-toolbar  { left: 0px; width: 720px; }
@@ -914,6 +915,7 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
   z-index: 2;
   background: var(--preview-directory-bg);
   border-radius: 0 0 0 14px;
+  transition: left 220ms cubic-bezier(.22,1,.36,1), border-radius 220ms ease;
 }
 .app-window.preview-left .directory-view {
   border-radius: 0 0 14px 0;
@@ -927,6 +929,7 @@ html[data-theme="light"] .app-window.expanded.preview-mode {
   z-index: 1;
   background: var(--preview-directory-bg);
   border-radius: 0 0 14px 0;
+  transition: transform 240ms cubic-bezier(.22,1,.36,1), border-radius 220ms ease;
 }
 .app-window.preview-left .editor-panel {
   transform: translateX(0) !important;
