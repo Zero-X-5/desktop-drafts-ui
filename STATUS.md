@@ -1,29 +1,41 @@
 # STATUS — 拾笺 (shijian)
 
 - 更新日期: 2026-08-05
-- 更新 Agent: Claude
-- HEAD commit: `6a32a0a`（合并 fix-ui-flicker 分支 `cbf05a6` + 补 index.html 引用 + 复用 --surface token）
+- 更新 Agent: Codex
+- HEAD commit: `5ddf21d`（代码基线；本 STATUS/CODEMAP 文档提交不影响代码基线）
 
 ## 当前分支
-`master`
+`agent/fix-ui-flicker`
 
 ## 当前目标
-整体方案收尾：修复展开/收起时的轻微闪烁（左右交换提前 5% 已实现）。
+窗口 resize 防闪烁实现已完成，等待 Windows WebView2 实机视觉回归；重点验证展开/折叠、预览开合、透明模式和快速连续操作。
 
 ## 当前配方 / 运行方式
 - 构建: 在项目根目录 `npm run tauri build`
-- 前端资源: `src/`（Tauri `frontendDist`，无构建步骤，直接嵌入）
+- 前端资源: `src/`（Tauri `frontendDist`，无前端构建步骤，直接嵌入）
 - 调试: 启动前设置 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`，用 CDP (9222) 做程序化验证
 - 安装路径: 构建产物复制到 `D:\AI Program Files\拾笺\拾笺.exe`
 - 运行进程: `拾笺.exe`
 
+## 本轮实现
+- [x] 修复 `performance-fixes.css` 未被加载的问题：`styles.css` 现在按顺序加载 core 样式和 resize 覆盖层
+- [x] 原生窗口独占尺寸控制：`.app-window` 始终 `100% × 100%`，移除 DOM 宽高动画冲突
+- [x] 新增全窗口不透明 resize 遮罩，resize 期间关闭 backdrop blur 和布局过渡
+- [x] 使用 `win.onResized`、目标尺寸确认和双 `requestAnimationFrame` 判断渲染稳定，不再依赖固定 `100ms`
+- [x] 展开、折叠、预览开合、隐藏和恢复统一进入串行 transition 队列，旧操作会被新目标合并
+- [x] 保留原始业务逻辑为 `main-core.js`，resize 同步层集中在 `resize-fixes.js`
+
+## 已执行验证
+- `node --check`：`main.js` 和 `resize-fixes.js` 通过
+- Mock DOM/Tauri 状态测试：展开、打开预览、关闭预览、快速连续切换通过
+- 远端回读：`main-core.js` 与原 `main.js` blob SHA 一致，`styles-core.css` 与原 `styles.css` blob SHA 一致
+
 ## 未完成事项
-- [x] 左右交换提前 5% 触发 — 已实现（`onMoved` 中 `margin = 0.05 * monitor.size.width`）
-- [~] 展开/收起轻微闪烁 — 修复已合入（`performance-fixes.css`，构建通过），实际效果待运行验证
-- [ ] 展开/收起闪烁运行验证（目测 / CDP 截图）
-- [ ] 透明模式、主题切换回归测试
+- [ ] 在 Windows WebView2 上构建并逐帧检查实际闪烁效果
+- [ ] 透明模式、深浅主题、100% / 125% / 150% 缩放回归
+- [ ] 左右屏幕边缘、双显示器和快速快捷键连续触发回归
 
 ## 下一步建议
-1. 聚焦修复展开/收起的轻微闪烁（遮罩淡出时机、resize 稳定时间）
-2. 有问题按 `AGENTS.md`「拾笺架构约定」做增量修复，勿回退旧方案
-3. 全部验收通过后，工作区提交为稳定版本
+1. 构建并安装代码基线 `5ddf21d`
+2. 每种状态连续切换至少 30 次，并录制 60fps 视频逐帧检查
+3. 若仍有单帧异常，先区分是方形背景、透明穿透还是内容重绘，再只调整 `performance-fixes.css` 的遮罩背景/淡出时机
