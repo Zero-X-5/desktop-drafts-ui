@@ -2,7 +2,7 @@
 
 - 更新日期: 2026-08-05
 - 更新 Agent: Claude
-- HEAD commit: `f564125`（代码基线；STATUS/CODEMAP 为纯文档提交，不影响基线）
+- HEAD commit: `6a32a0a`（合并 fix-ui-flicker 分支 `cbf05a6` + 补 index.html 引用 + 复用 --surface token）
 
 ## 当前分支
 `master`
@@ -19,7 +19,8 @@
 
 ## 未完成事项
 - [x] 左右交换提前 5% 触发 — 已实现（`onMoved` 中 `margin = 0.05 * monitor.size.width`）
-- [ ] 展开/收起仍有轻微闪烁 — 待修（遮罩/时序，按 `AGENTS.md` 架构约定增量调整）
+- [~] 展开/收起轻微闪烁 — 修复已合入（`performance-fixes.css`，构建通过），实际效果待运行验证
+- [ ] 展开/收起闪烁运行验证（目测 / CDP 截图）
 - [ ] 透明模式、主题切换回归测试
 
 ## 下一步建议
