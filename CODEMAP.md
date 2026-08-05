@@ -1,68 +1,103 @@
 # CODEMAP — 拾笺 (shijian)
 
 ## 项目结构
-```
+```text
 shijian/
-├── AGENTS.md          项目协议（通用开发协议 + UI 规范 + 架构约定）
-├── DESIGN.md          UI 规范（设计 token、尺寸、圆角、字体、组件约定）
-├── STATUS.md          当前状态、代码基线、验证与待办
-├── CODEMAP.md         本文件
-├── src/               前端（Tauri frontendDist，直接嵌入无需构建）
-│   ├── index.html     DOM 结构 + SVG 图标
-│   ├── main.js        JavaScript 轻量入口：依次加载 main-core.js、resize-fixes.js
-│   ├── main-core.js   原始业务逻辑、事件绑定、草稿 CRUD、设置与窗口基础逻辑
-│   ├── resize-fixes.js 窗口 resize 同步层与防并发状态队列
-│   ├── styles.css     CSS 轻量入口：依次加载 styles-core.css、performance-fixes.css
-│   ├── styles-core.css 原始视觉样式与整体布局
-│   ├── performance-fixes.css resize 遮罩、100% 根容器和合成性能覆盖
-│   └── assets/        静态资源
-└── src-tauri/         Rust 后端
-    ├── src/lib.rs     主要后端逻辑
-    ├── src/main.rs    入口
-    ├── tauri.conf.json 窗口/构建/打包配置
-    ├── Cargo.toml     依赖
-    └── capabilities/  权限声明
+├── AGENTS.md
+├── DESIGN.md
+├── STATUS.md
+├── CODEMAP.md
+├── src/
+│   ├── index.html
+│   ├── main.js                 前端加载入口
+│   ├── main-core.js            草稿业务、设置、事件与基础窗口交互
+│   ├── resize-fixes.js         固定画布 Region 状态协调层
+│   ├── styles.css              样式加载入口
+│   ├── styles-core.css         原始视觉样式与整体布局
+│   ├── performance-fixes.css   固定画布坐标与透明背景覆盖
+│   └── assets/
+└── src-tauri/
+    ├── src/lib.rs              后端命令、托盘、快捷键、文件监控
+    ├── src/window_region.rs    固定画布和 Windows 圆角 Region
+    ├── src/main.rs
+    ├── tauri.conf.json
+    ├── Cargo.toml
+    └── capabilities/
 ```
 
-## 前端核心 (src/)
+## 架构概览
 
-### main.js
-- 仅作为加载入口，不承载业务逻辑
-- 页面解析阶段同步加载 `main-core.js`，随后加载 `resize-fixes.js`
-- 非解析阶段提供顺序动态加载兜底
+应用继续使用一个原生窗口、一个 WebView 和一个整体 DOM，但原生窗口不再随 UI 状态改变尺寸。
 
-### main-core.js
-- `resizeWindow()` — 原始基础尺寸逻辑；运行时由 `resize-fixes.js` 的稳定版本覆盖
-- `expand()` / `collapse()` / `openPreview()` / `closePreview()` — 原始交互入口；事件监听仍调用同名全局绑定
-- `applyPreviewSide()` / `onMoved` — 左右边缘 5% 阈值与瞬间 flex order 翻转
-- 草稿 CRUD、拖拽排序、保存、托盘联动、设置、主题、透明模式和快捷键
+- HWND / WebView 固定为 720×480
+- 折叠状态只显示 248×36 圆角 Region
+- 目录状态只显示 248×480 圆角 Region
+- 预览状态显示完整 720×480 圆角 Region
+- 目录位于右侧布局时，窄 Region 从 x=0 开始
+- 目录位于左侧布局时，窄 Region 从 x=472 开始
+- 所有状态使用 14px 逻辑圆角，并按显示器 scale factor 转换为物理像素
 
-### resize-fixes.js
-- `setWindowSizeStable()` — resize 前监听 `win.onResized`，结合 `innerSize()` / `scaleFactor()`、48ms 稳定窗口和双 RAF 等待渲染提交
-- `queueWindowTransition()` — 串行化窗口操作，并用版本号丢弃被新目标取代的旧操作
-- `showResizeMask()` / `hideResizeMask()` — 在原生 resize 前先提交不透明遮罩，稳定后再淡出
-- 覆盖 `resizeWindow`、`expand`、`collapse`、`openPreview`、`closePreview`、`hideApp`、`restoreHidden`
-- 预览方向和超屏位置修正仍沿用原有整体窗口方案
+这不是旧的 1192px 轨道或多表面方案。固定画布中只有当前的 720px 单一 DOM，Region 只负责原生裁剪。
 
-### styles.css / styles-core.css
-- `styles.css` 只负责按顺序导入 core 样式和性能覆盖
-- `styles-core.css` 保留原 `.app-window`、目录/编辑 flex 布局、主题变量与组件样式
+## 前端 (`src/`)
 
-### performance-fixes.css
-- `.app-window` 在所有状态始终填满原生窗口，不再执行 width/height CSS 动画
-- `#resizeMask` 是应用容器内的完全不透明高层遮罩
-- `body.window-resizing` 在 WebView2 重新分配表面期间提供主题对应的纯色底
-- resize 期间关闭 backdrop blur 和窗口/壳层 transition，避免透明合成与布局动画竞争
+### `main.js`
+- 同步加载 `main-core.js`，随后加载 `resize-fixes.js`
+- 不承载业务逻辑
 
-## 后端 (src-tauri/src/lib.rs)
-- 命令: `get_store_dir`, `list_drafts`, `read_draft`, `write_draft`, `delete_to_recycle`, `open_folder`, `get_settings`, `set_settings`, `set_autostart`, `set_hotkey`
-- 托盘: 显示/隐藏、新建草稿、退出
-- 全局快捷键: `ctrl+shift+space`（切换）、`ctrl+shift+n`（新建）
-- 文件监控: `notify` → `drafts-changed` 事件
+### `main-core.js`
+- 草稿 CRUD、自动保存、文件冲突、拖拽排序、设置、主题、透明模式
+- 托盘和全局快捷键事件对应的前端状态切换
+- `onMoved` 仍负责在靠近显示器边缘时请求左右换侧
+- 原始窗口函数会在加载结束后由 `resize-fixes.js` 覆盖
+
+### `resize-fixes.js`
+- 不再调用 `win.setSize`、`win.onResized` 或尺寸稳定计时器
+- 通过 `invoke('set_window_region', { state, side })` 切换原生 Region
+- 使用版本号和 Promise 队列串行化展开、折叠、预览开关、隐藏和恢复
+- 展开顺序：先修改 DOM → 等待两个渲染帧 → 扩大 Region
+- 收起顺序：先缩小 Region → 再移除 DOM 内容
+- 左右换侧：移动固定画布 472 逻辑像素，并同步 `preview-left` / `preview-right` 和窄 Region
+- 预览打开后按当前显示器工作区夹紧固定 720px 画布位置
+
+### `performance-fixes.css`
+- `html/body` 固定为 720×480 且背景永久透明
+- 折叠壳层 248×36、目录壳层 248×480、预览壳层 720×480
+- 非预览的左侧目录布局将 `.app-window` 放在 x=472
+- 所有状态统一 14px 圆角
+- 禁用旧 `.app-window::after` / `#resizeMask`
+- 不再使用不透明 body 背景遮盖整个透明 HWND
+- 取消宽度、高度和圆角动画，只保留背景颜色过渡
+
+## 后端 (`src-tauri/`)
+
+### `src/window_region.rs`
+- `ensure_fixed_canvas()`：确保原生窗口为 720×480 逻辑像素
+- `region_geometry()`：计算 collapsed / expanded / preview 的逻辑 Region
+- Windows 平台：
+  - 使用 `WebviewWindow::hwnd()` 获取 HWND
+  - 使用 `scale_factor()` 将逻辑坐标转换为物理坐标
+  - 通过 `CreateRoundRectRgn` 创建圆角 Region
+  - 通过 `SetWindowRgn` 原子替换窗口可见区域
+  - 成功后 Region handle 所有权交给 Windows；失败时主动释放
+- 非 Windows 平台：校验状态参数后 no-op
+
+### `src/lib.rs`
+- 注册 `set_window_region` 命令
+- 启动时恢复 always-on-top 设置
+- 确保 720×480 固定画布
+- 在窗口显示前应用 collapsed/right 初始 Region
+- 其他命令：`get_store_dir`, `list_drafts`, `read_draft`, `write_draft`, `delete_to_recycle`, `open_folder`, `get_settings`, `set_settings`, `set_autostart`, `set_hotkey`
+
+### `tauri.conf.json`
+- 主窗口尺寸固定为 720×480
+- `visible: false`，防止 Region 设置前出现完整矩形窗口
+- 继续使用透明、无装饰、无阴影、不可调整大小的单窗口
 
 ## 关键决策
-- 继续使用一个整体 DOM + 原生窗口真实 resize + flex order 瞬间换侧
-- 原生窗口是唯一尺寸来源，DOM 根容器只填满 viewport
-- resize 完成以 Tauri resize 事件和渲染帧为准，不使用固定等待时间猜测
-- 不回退到 1192 轨道、`SetWindowRgn` 或三独立表面旧方案
-- 业务逻辑修改进入 `main-core.js`；仅 resize/合成相关修改进入 `resize-fixes.js` 和 `performance-fixes.css`
+- 禁止恢复运行时原生 `setSize` 状态切换
+- 禁止用不透明 body 背景或全 HWND 矩形遮罩掩盖过渡
+- Region 必须在展开时最后扩大、收起时最先缩小
+- 保持单窗口、单 WebView、单 DOM；不拆分目录和预览窗口
+- 若调整尺寸或圆角，必须同时更新 Rust Region 常量和 CSS 固定画布变量
+- Windows 实机测试必须覆盖多 DPI、双显示器和左右换侧
