@@ -1,12 +1,5 @@
 /* Window-resize stabilization overrides.
    The native Tauri window owns width/height; the WebView root fills it. */
-:root {
-  --resize-mask: rgb(247, 248, 251);
-}
-
-html[data-theme="dark"] {
-  --resize-mask: rgb(23, 26, 34);
-}
 
 .app-window,
 .app-window.expanded,
@@ -22,7 +15,7 @@ html[data-theme="dark"] {
 }
 
 .app-window::after {
-  background: var(--resize-mask);
+  background: var(--surface);
   transition: opacity 140ms ease;
 }
 
