@@ -1,0 +1,39 @@
+/* Window-resize stabilization overrides.
+   The native Tauri window owns width/height; the WebView root fills it. */
+:root {
+  --resize-mask: rgb(247, 248, 251);
+}
+
+html[data-theme="dark"] {
+  --resize-mask: rgb(23, 26, 34);
+}
+
+.app-window,
+.app-window.expanded,
+.app-window.preview-mode {
+  width: 100%;
+  height: 100%;
+}
+
+.app-window {
+  transition:
+    border-radius 180ms cubic-bezier(.22, 1, .36, 1),
+    background-color 180ms ease;
+}
+
+.app-window::after {
+  background: var(--resize-mask);
+  transition: opacity 140ms ease;
+}
+
+/* The opaque mask makes blur unnecessary while WebView2 reallocates surfaces. */
+.app-window.masking,
+.app-window.preview-opening,
+.app-window.preview-closing {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.app-window.preview-ready::after {
+  transition: opacity 140ms ease;
+}
