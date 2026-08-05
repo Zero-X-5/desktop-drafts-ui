@@ -29,10 +29,11 @@
 
 改动本项目的布局、窗口、预览交互前，先读本节，**不得无理由回退到更复杂的旧方案**。
 
-- **整体方案**：一个整体 DOM（`src/index.html` 的 `.app-window`），目录+编辑用 flex 排列，上方栏横跨。
-- **窗口真实 resize**：`win.setSize` 按状态调整窗口尺寸（collapsed 248×36 / expanded 248×480 / preview 720×480）。**不再使用** 永久 1192 宽窗口 + `SetWindowRgn` 裁剪方案（历史遗留，已废弃）。
-- **目录不固定屏幕坐标**：预览方向由窗口相对屏幕边缘决定（`openPreview` 检测右缘超屏选侧），拖动触边时 `applyPreviewSide` 瞬间翻转（flex `order`），**无滑动动画**。
-- **resize 中间帧遮罩**：打开/收起/展开/折叠时用 `.app-window::after` 遮罩盖住 WebView2 新区域白屏；`preview-opening / preview-closing / masking` 置遮罩为 1，`preview-ready` 触发淡出。
+- **整体方案**：一个整体 DOM（`src/index.html` 的 `.app-window`），目录+编辑用 flex 排列，上方栏横跨；单窗口、单 WebView、单 DOM。
+- **固定画布 + 原生 Region 裁剪**：主窗口永久 720×480（透明、无装饰、不可调整大小），启动时先隐藏、应用初始折叠 Region 后再显示。可见区域由 Rust `src-tauri/src/window_region.rs` 用 `CreateRoundRectRgn` / `SetWindowRgn` 按状态裁剪：collapsed 248×36 / expanded 248×480 / preview 720×480，统一 14px 逻辑圆角（按显示器 scale factor 转物理像素）。前端**不再调用** `win.setSize` / `win.onResized`，状态切换改为 `invoke('set_window_region', { state, side })`。
+- **目录不固定屏幕坐标**：预览方向由窗口相对屏幕边缘决定（`openPreview` 检测右缘超屏选侧），拖动触边时 `applyPreviewSide` 瞬间翻转（flex `order`），**无滑动动画**；换侧时固定画布平移 472px，目录在屏幕上的位置保持不变。
+- **Region 切换时序**：展开/打开预览先在被裁剪的固定画布内完成 DOM 布局，再扩大 Region；收起/折叠先缩小 Region，再移除 DOM 内容；状态切换由 `resize-fixes.js` 用版本号 + Promise 队列串行化。
+- **CSS 遮罩已废弃**：Region 原生裁剪已替代 `.app-window::after` 遮罩（后者 `display:none`）；`html/body` 永久透明，不再使用 resize 专用不透明背景或全窗口遮罩。
 - **交换提前 5%**：`onMoved` 中距离屏幕边界 5% 屏幕宽度即触发交换（`margin = 0.05 * monitor.size.width`）。
-- **已知取舍**：resize 以窗口左上角为锚，窗口靠屏幕右缘展开可能超屏，`openPreview` 会自动 `setPosition` 左移兜底。
-- **历史教训**：1192 轨道 + `SetWindowRgn` + 三独立表面方案造成动画不同步、收起闪烁等大量问题，整体重构后才解决。后续加功能优先在整体方案上做增量，不要重蹈覆辙。
+- **已知取舍**：固定画布以 720 宽为基准，折叠/目录态靠 Region 裁剪；靠屏幕右缘展开预览可能超屏，`openPreview` 会自动 `setPosition` 左移兜底。
+- **历史教训**：旧的 1192 轨道 + `SetWindowRgn` + 三独立表面方案造成动画不同步、收起闪烁等大量问题，已废弃。当前固定画布方案虽也使用 Region 裁剪，但**只有单一 DOM/单 WebView，Region 只负责原生裁剪，不引入多表面**；后续增量不得回到按 DOM 分表面渲染或多 DOM 同步的旧思路。

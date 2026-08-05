@@ -18,7 +18,6 @@
 | `--glass` | `rgba(242,243,248,.70)` | `rgba(27,30,38,.56)` | 面板/玻璃底 |
 | `--glass-strong` | `rgba(242,243,248,.80)` | `rgba(29,32,41,.70)` | 强玻璃/透明模式窗口 |
 | `--surface` | `rgba(247,248,251,.86)` | `rgba(23,26,34,.84)` | 内容区/输入/遮罩底 |
-| `--resize-mask` | `rgb(247,248,251)` | `rgb(23,26,34)` | resize 遮罩底（不透明，盖 WebView2 中间帧白屏） |
 | `--surface-soft` | `rgba(0,0,0,.028)` | `rgba(255,255,255,.026)` | 次级底（列表面板） |
 | `--surface-hover` | `rgba(0,0,0,.062)` | `rgba(255,255,255,.066)` | 悬停 |
 | `--surface-selected` | `rgba(108,143,255,.16)` | `rgba(99,140,255,.18)` | 选中 |
@@ -52,6 +51,8 @@
 | `--fw-bold` | 650 |
 
 ## 尺寸体系
+
+> 物理窗口固定 720 × 480（透明、无装饰、不可调）；下表为 **Region 可见区域**（Rust `SetWindowRgn` 按状态裁剪）。
 
 | 项 | 值 |
 |---|---|
@@ -100,7 +101,7 @@
 
 ## 特殊约束
 
-- **透明窗口背景**：窗口本体背景必须是 near-opaque（`rgba(14,18,27,.95)` / `rgba(240,242,248,.95)`），纯 opaque 会渲染成白屏；透明模式用 `--glass-strong`
-- **resize 遮罩**：打开/收起/展开/折叠用 `.app-window::after` + `#resizeMask` 遮罩盖中间帧，底色 `--resize-mask`（不透明，盖 WebView2 中间帧白屏）；resize 期间 `body.window-resizing` 关闭 backdrop blur 与布局过渡
+- **透明窗口背景**：`html/body` 永久透明，可见区域完全由原生 Region 裁剪；窗口内内容区背景用 `--surface` 等半透明 token
+- **固定画布 + Region 裁剪**：主窗口固定 720×480，可见区域由 Rust `SetWindowRgn` 按状态裁剪（collapsed 248×36 / expanded 248×480 / preview 720×480，统一 14px 逻辑圆角）；前端 **CSS 遮罩已废弃**（`.app-window::after` `display:none`），不再有全窗口遮罩或 resize 专用不透明背景
 - **阴影**：窗口本体不画 box-shadow（见上）
-- **动画时长**：窗口态 `220ms cubic-bezier(.22,1,.36,1)`；组件 hover/active `80~150ms ease`；弹层 `135~180ms`
+- **动画时长**：窗口 Region 切换为原生即时裁剪、无宽高/圆角过渡动画（仅背景色 `180ms ease`）；组件 hover/active `80~150ms ease`；弹层 `135~180ms`

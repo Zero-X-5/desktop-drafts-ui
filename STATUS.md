@@ -1,8 +1,8 @@
 # STATUS — 拾笺 (shijian)
 
 - 更新日期: 2026-08-05
-- 更新 Agent: Codex
-- 代码基线: `838166f`
+- 更新 Agent: Claude
+- 代码基线: `6b1fbb3`（master merge verify-region；本机 `cargo check` + `tauri build` 已通过）
 
 ## 当前分支
 `master`
@@ -33,16 +33,17 @@
 - 代码检索确认新的 `resize-fixes.js` 不再调用 `win.setSize`
 - Tauri 配置确认固定 720×480，并在 Region 应用前保持隐藏
 - 未新增 Cargo 依赖，`Cargo.toml` 与 `Cargo.lock` 保持不变
+- **本机已验证（2026-08-05）**：`cargo check` 通过；`npm run tauri build` 通过（exe + NSIS 打包成功）
 
 ## 尚未执行 / 风险
-- [ ] 当前连接器环境无法运行 Windows Rust 编译，尚未执行 `cargo check` 或 `npm run tauri build`
+- [ ] 尚未在真实 Windows WebView2 上逐帧验证 Region 切换效果
 - [ ] 尚未在真实 Windows WebView2 上逐帧验证 Region 切换效果
 - [ ] 需要验证 100% / 125% / 150% DPI 下圆角和坐标是否准确
 - [ ] 需要验证双显示器、屏幕边缘换侧、拖动及快速快捷键连续触发
 - [ ] GDI Region 边缘抗锯齿可能与 CSS 圆角存在 1px 视觉差异
 
 ## 实机验收建议
-1. 构建并运行代码基线 `838166f`
+1. 运行代码基线 `6b1fbb3`（已构建通过）
 2. 折叠/展开、预览开/关各连续切换至少 30 次
 3. 使用 60fps 或更高帧率录屏，逐帧检查是否仍出现完整矩形或圆角丢失
 4. 分别测试深色、浅色、透明模式和 100% / 125% / 150% 缩放
