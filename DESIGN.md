@@ -18,6 +18,7 @@
 | `--glass` | `rgba(242,243,248,.70)` | `rgba(27,30,38,.56)` | 面板/玻璃底 |
 | `--glass-strong` | `rgba(242,243,248,.80)` | `rgba(29,32,41,.70)` | 强玻璃/透明模式窗口 |
 | `--surface` | `rgba(247,248,251,.86)` | `rgba(23,26,34,.84)` | 内容区/输入/遮罩底 |
+| `--resize-mask` | `rgb(247,248,251)` | `rgb(23,26,34)` | resize 遮罩底（不透明，盖 WebView2 中间帧白屏） |
 | `--surface-soft` | `rgba(0,0,0,.028)` | `rgba(255,255,255,.026)` | 次级底（列表面板） |
 | `--surface-hover` | `rgba(0,0,0,.062)` | `rgba(255,255,255,.066)` | 悬停 |
 | `--surface-selected` | `rgba(108,143,255,.16)` | `rgba(99,140,255,.18)` | 选中 |
@@ -100,6 +101,6 @@
 ## 特殊约束
 
 - **透明窗口背景**：窗口本体背景必须是 near-opaque（`rgba(14,18,27,.95)` / `rgba(240,242,248,.95)`），纯 opaque 会渲染成白屏；透明模式用 `--glass-strong`
-- **resize 遮罩**：打开/收起/展开/折叠用 `.app-window::after` 遮罩盖中间帧，底色 `--surface`
+- **resize 遮罩**：打开/收起/展开/折叠用 `.app-window::after` + `#resizeMask` 遮罩盖中间帧，底色 `--resize-mask`（不透明，盖 WebView2 中间帧白屏）；resize 期间 `body.window-resizing` 关闭 backdrop blur 与布局过渡
 - **阴影**：窗口本体不画 box-shadow（见上）
 - **动画时长**：窗口态 `220ms cubic-bezier(.22,1,.36,1)`；组件 hover/active `80~150ms ease`；弹层 `135~180ms`

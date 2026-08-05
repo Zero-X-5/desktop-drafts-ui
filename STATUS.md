@@ -1,14 +1,14 @@
 # STATUS — 拾笺 (shijian)
 
 - 更新日期: 2026-08-05
-- 更新 Agent: Codex
-- HEAD commit: `5ddf21d`（代码基线；本 STATUS/CODEMAP 文档提交不影响代码基线）
+- 更新 Agent: Claude
+- HEAD commit: `96c3555`（merge 远端 `agent/fix-ui-flicker` 重构；本地仅去除冗余 `performance-fixes.css` 引用）
 
 ## 当前分支
-`agent/fix-ui-flicker`
+`master`
 
 ## 当前目标
-窗口 resize 防闪烁实现已完成，等待 Windows WebView2 实机视觉回归；重点验证展开/折叠、预览开合、透明模式和快速连续操作。
+已拉取远端防闪烁重构（core/fix 层拆分 + resize 串行队列），等待 Windows WebView2 实机视觉回归；重点验证展开/折叠、预览开合、透明模式和快速连续操作。
 
 ## 当前配方 / 运行方式
 - 构建: 在项目根目录 `npm run tauri build`
@@ -36,6 +36,6 @@
 - [ ] 左右屏幕边缘、双显示器和快速快捷键连续触发回归
 
 ## 下一步建议
-1. 构建并安装代码基线 `5ddf21d`
+1. 构建并安装代码基线 `96c3555`
 2. 每种状态连续切换至少 30 次，并录制 60fps 视频逐帧检查
 3. 若仍有单帧异常，先区分是方形背景、透明穿透还是内容重绘，再只调整 `performance-fixes.css` 的遮罩背景/淡出时机
