@@ -1,7 +1,8 @@
 /* Window-resize stabilization overrides.
-   The native Tauri window owns width/height; the WebView root fills it. */
+   The native Tauri window owns width/height; the WebView root always fills it. */
 :root {
   --resize-mask: rgb(247, 248, 251);
+  --resize-mask-duration: 140ms;
 }
 
 html[data-theme="dark"] {
@@ -23,10 +24,42 @@ html[data-theme="dark"] {
 
 .app-window::after {
   background: var(--resize-mask);
-  transition: opacity 140ms ease;
+  transition: opacity var(--resize-mask-duration) ease;
 }
 
-/* The opaque mask makes blur unnecessary while WebView2 reallocates surfaces. */
+#resizeMask {
+  position: absolute;
+  inset: 0;
+  z-index: 2147483647;
+  border-radius: inherit;
+  background: var(--resize-mask);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--resize-mask-duration) ease,
+              visibility 0s linear var(--resize-mask-duration);
+}
+
+body.window-resizing {
+  background: var(--resize-mask) !important;
+  border-radius: 14px;
+}
+
+body.window-resizing #resizeMask {
+  opacity: 1;
+  visibility: visible;
+  transition: none;
+}
+
+body.window-resize-ready #resizeMask {
+  opacity: 0;
+  visibility: visible;
+  transition: opacity var(--resize-mask-duration) ease;
+}
+
+/* Opaque masking avoids expensive transparent blur recomposition while
+   WebView2 reallocates its backing surface. */
+body.window-resizing .app-window,
 .app-window.masking,
 .app-window.preview-opening,
 .app-window.preview-closing {
@@ -34,6 +67,12 @@ html[data-theme="dark"] {
   -webkit-backdrop-filter: none;
 }
 
+body.window-resizing .app-window,
+body.window-resizing .collapsed-bar,
+body.window-resizing .expanded-shell {
+  transition: none !important;
+}
+
 .app-window.preview-ready::after {
-  transition: opacity 140ms ease;
+  transition: opacity var(--resize-mask-duration) ease;
 }
