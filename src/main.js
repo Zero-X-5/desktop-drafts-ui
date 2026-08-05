@@ -327,7 +327,7 @@ async function expand(focusEditor = false) {
   settingsPopover.classList.remove('show');
   appEl.classList.add('masking');   // 遮罩盖住 248×36→248×480 的 resize 中间帧
   await resizeWindow();
-  await new Promise(r => setTimeout(r, 60));
+  await new Promise(r => setTimeout(r, 100));
   appEl.classList.remove('masking');
   if (focusEditor) setTimeout(() => openPreview(activeId, true), 170);
 }
@@ -343,7 +343,7 @@ async function collapse() {
   }
   appEl.classList.remove('expanded');
   await resizeWindow();
-  await new Promise(r => setTimeout(r, 60));
+  await new Promise(r => setTimeout(r, 100));
   appEl.classList.remove('masking');
 }
 
@@ -386,7 +386,7 @@ async function openPreview(id, focusEditor = false) {
       }
     }
   } catch (e) {}
-  await new Promise(r => setTimeout(r, 60)); // 等 WebView 渲染 resize 后内容
+  await new Promise(r => setTimeout(r, 100)); // 等 WebView 渲染 resize 后内容
   requestAnimationFrame(() => {
     appEl.classList.add('preview-ready');
     setTimeout(() => appEl.classList.remove('preview-opening', 'preview-ready'), 240);
@@ -403,7 +403,7 @@ async function closePreview() {
   expandedShell.classList.remove('preview-open');
   appEl.classList.remove('preview-mode', 'preview-left', 'preview-right');
   await resizeWindow(); // 窗口 720→248
-  await new Promise(r => setTimeout(r, 60));
+  await new Promise(r => setTimeout(r, 100));
   requestAnimationFrame(() => {
     appEl.classList.remove('preview-closing');
   });
@@ -736,10 +736,12 @@ async function setupNativeEvents() {
       const pos = await win.outerPosition();
       const mLeft = monitor.position.x;
       const mRight = monitor.position.x + monitor.size.width;
+      // 提前 5% 屏幕宽度触发交换（右缘距边界 5% 即换，不必贴边）
+      const margin = 0.05 * monitor.size.width;
       if (previewSide === 'right') {
-        if (pos.x + WINDOW_SIZE.preview.w * scale >= mRight) await applyPreviewSide('left');
+        if (pos.x + WINDOW_SIZE.preview.w * scale >= mRight - margin) await applyPreviewSide('left');
       } else {
-        if (pos.x <= mLeft) await applyPreviewSide('right');
+        if (pos.x <= mLeft + margin) await applyPreviewSide('right');
       }
     });
   } catch (e) { console.error('moved watcher', e); }
