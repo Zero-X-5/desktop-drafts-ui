@@ -2,7 +2,7 @@
 
 - 更新日期: 2026-08-05
 - 更新 Agent: Claude
-- HEAD commit: `0f7303a`
+- HEAD commit: `f564125`（代码基线；STATUS/CODEMAP 为纯文档提交，不影响基线）
 
 ## 当前分支
 `master`
