@@ -3,7 +3,7 @@
 ## 项目结构
 ```
 shijian/
-├── AGENTS.md          项目协议（继承父目录通用协议 + UI规范 + 拾笺架构约定）
+├── AGENTS.md          项目协议（自包含：通用开发协议 + UI规范 + 拾笺架构约定）
 ├── DESIGN.md          UI 规范（设计 token、尺寸、圆角、字体、组件约定）
 ├── STATUS.md          当前状态（HEAD、目标、待办）
 ├── CODEMAP.md         本文件
