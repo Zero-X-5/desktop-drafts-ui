@@ -1,3 +1,5 @@
+mod window_region;
+
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use tauri::{
@@ -145,7 +147,6 @@ fn read_draft(path: String) -> Result<String, String> {
     std::fs::read_to_string(&path).map_err(|e| e.to_string())
 }
 
-/// path = None 新建；Some 时若标题变了自动重命名文件。
 #[tauri::command]
 fn write_draft(
     app: tauri::AppHandle,
@@ -226,6 +227,15 @@ fn set_hotkey(app: tauri::AppHandle, enabled: bool) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn set_window_region(
+    window: tauri::WebviewWindow,
+    state: String,
+    side: String,
+) -> Result<(), String> {
+    window_region::apply(&window, &state, &side)
+}
+
 fn show_window(app: &tauri::AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         let _ = win.show();
@@ -233,7 +243,6 @@ fn show_window(app: &tauri::AppHandle) {
     }
 }
 
-/// 全局快捷键：窗口可见时折叠/展开，不可见时先唤出再切换。
 fn hotkey_toggle(app: &tauri::AppHandle) {
     if let Some(win) = app.get_webview_window("main") {
         if !win.is_visible().unwrap_or(false) {
@@ -294,11 +303,10 @@ fn spawn_watcher(app: tauri::AppHandle) {
     std::thread::spawn(move || {
         use notify::{RecommendedWatcher, RecursiveMode, Watcher};
         let (tx, rx) = std::sync::mpsc::channel();
-        let mut watcher: RecommendedWatcher =
-            notify::recommended_watcher(move |res| {
-                let _ = tx.send(res);
-            })
-            .unwrap();
+        let mut watcher: RecommendedWatcher = notify::recommended_watcher(move |res| {
+            let _ = tx.send(res);
+        })
+        .unwrap();
         if watcher.watch(&dir, RecursiveMode::NonRecursive).is_err() {
             return;
         }
@@ -344,14 +352,22 @@ pub fn run() {
             get_settings,
             set_settings,
             set_autostart,
-            set_hotkey
+            set_hotkey,
+            set_window_region
         ])
         .setup(|app| {
-            let s = load_settings(app.handle());
+            let settings = load_settings(app.handle());
             if let Some(win) = app.get_webview_window("main") {
-                let _ = win.set_always_on_top(s.always_on_top);
+                let _ = win.set_always_on_top(settings.always_on_top);
+                if let Err(error) = window_region::ensure_fixed_canvas(&win) {
+                    eprintln!("failed to fix window canvas size: {error}");
+                }
+                if let Err(error) = window_region::apply(&win, "collapsed", "right") {
+                    eprintln!("failed to apply initial window region: {error}");
+                }
+                let _ = win.show();
             }
-            if s.hotkey {
+            if settings.hotkey {
                 let _ = set_hotkey(app.handle().clone(), true);
             }
             setup_tray(app.handle())?;
