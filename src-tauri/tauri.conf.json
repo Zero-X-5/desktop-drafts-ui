@@ -12,8 +12,9 @@
       {
         "label": "main",
         "title": "拾笺",
-        "width": 248,
-        "height": 36,
+        "width": 720,
+        "height": 480,
+        "visible": false,
         "decorations": false,
         "transparent": true,
         "shadow": false,
