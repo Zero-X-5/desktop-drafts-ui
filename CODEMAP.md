@@ -8,6 +8,7 @@
 - `run.ps1`：关闭旧实例、启动并激活 `bin\NativeGlassDemo.exe`。
 - `select-backdrop.ps1`：验证 Mica、Acrylic、透明玻璃切换。
 - `capture-window.ps1`：使用目标窗口绘制内容生成验证截图；DWM 系统 backdrop 不保证能被 `PrintWindow` 捕获。
+- `README.md`：项目定位、限制和最小使用说明。
 
 ## 数据流
 
@@ -20,6 +21,13 @@ WM_DPICHANGED/WM_DISPLAYCHANGE -> 重建 DPI 相关布局、DWM 扩展 Frame 和
 WM_LBUTTONUP -> 编辑区材质切换 / 顶栏窗口操作
 ```
 
+## 排查入口
+
+- 玻璃边界、圆角和材质切换：从 `applyBackdrop`、`applyBackdropAttributes`、`extendFrameIntoClientArea`、`rebuildDwmFrame` 开始。
+- 跨屏与 DPI：检查 `WM_DPICHANGED`、`WM_DISPLAYCHANGE`、`WM_WINDOWPOSCHANGED` 以及 `g_dpi`/`ui()` 的关系。
+- 拉伸与残影：检查 `resizeHitTest`、`beginResize`、`updateResize`、`WM_PAINT`、`WM_ERASEBKGND` 和 `refreshFrame` 的绘制/合成顺序。
+- 标题、Tab 和按钮重复绘制：先对照 `paint()` 中的顶栏、Tab 栏和编辑区坐标，再检查 DWM 扩展区域是否与 GDI 绘制区域重叠。
+
 ## 修改边界
 
 - 材质切换集中在 `applyBackdrop`；`extendFrameIntoClientArea` 将系统材质扩展到自绘顶栏客户区。
@@ -29,3 +37,4 @@ WM_LBUTTONUP -> 编辑区材质切换 / 顶栏窗口操作
 - `refreshFrame`、`postFrameRefresh` 和 `WM_ERASEBKGND` 共同负责透明顶栏与不透明客户区的重绘边界；顶栏不填充实体色，Tab/编辑区在擦除阶段显式清理。
 - `applyBackdropAttributes` 只提交 DWM 材质属性；`rebuildDwmFrame` 负责按需执行 `DwmExtendFrameIntoClientArea`、`SWP_FRAMECHANGED`、完整重绘和 `DwmFlush`，跨屏 DPI 变化与显示器配置变化统一经过该路径。
 - 不在此 Demo 中添加业务状态、React 组件或持久化逻辑。
+- `bin/` 和验证截图属于构建/验证产物，不作为源码入口；截图因 DWM backdrop 捕获限制只能作为辅助证据。
