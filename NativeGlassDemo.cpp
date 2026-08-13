@@ -301,10 +301,16 @@ void paint(HDC dc) {
   const int titleBarHeight = ui(kTitleBarHeight);
   const int tabBarTop = titleBarHeight;
   const int editorTop = ui(kTitleBarHeight + kTabBarHeight);
+  const RECT titleBar{0, 0, rect.right, titleBarHeight};
   const RECT tabBar{0, tabBarTop, rect.right, editorTop};
   const RECT editor{0, editorTop, rect.right, rect.bottom};
 
-  // Only the title bar is left unpainted so DWM renders the native material.
+  // The DWM-extended titlebar needs deterministic alpha-zero pixels beneath
+  // the glass on every paint. Resetting it to black prevents preserved GDI
+  // pixels (old tabs, title text or controls) from surviving DPI/resize frame
+  // changes while still allowing DWM to render the native material.
+  fillSolid(dc, titleBar, RGB(0, 0, 0));
+
   // The tab bar and editor remain opaque, matching the actual app layering.
   fillSolid(dc, tabBar, g_dark ? RGB(31, 37, 46) : RGB(238, 243, 249));
   fillSolid(dc, editor, g_dark ? RGB(28, 33, 41) : RGB(249, 250, 252));
@@ -574,9 +580,9 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
       return 0;
 
     case WM_ERASEBKGND: {
-      // Keep the DWM-owned titlebar transparent, but explicitly erase the
-      // opaque tab/editor surfaces. Returning 1 without clearing them lets
-      // old GDI pixels survive a move/resize repaint.
+      // paint() resets the DWM titlebar to an alpha-zero black base. Erase
+      // only the opaque tab/editor surfaces here so background erasure never
+      // replaces the glass base with an opaque system brush.
       HDC dc = reinterpret_cast<HDC>(wParam);
       RECT clip{};
       if (GetClipBox(dc, &clip) == ERROR) return 1;
