@@ -1,0 +1,8 @@
+build/
+bin/
+obj/
+*.user
+*.suo
+
+# Generated visual verification captures.
+*.png
