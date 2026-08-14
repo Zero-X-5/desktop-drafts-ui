@@ -65,7 +65,7 @@ Use the current **Stable** Windows App SDK channel. As of August 2026 Microsoft 
 
 Then:
 
-1. Copy `LiquidGlassRenderer.h/.cpp` into the app project.
+1. Copy `LiquidGlassRenderer.h`, `LiquidGlassRenderer.cpp`, and all `LiquidGlassRenderer.part*.inc` files into the app project directory. The `.cpp` wrapper includes the parts in order; only the `.cpp` needs to be compiled.
 2. Replace the template `MainWindow.xaml`, `MainWindow.xaml.h`, and `MainWindow.xaml.cpp` with the files in `WinUIHost/`.
 3. Merge `pch-additions.h` into the template `pch.h`.
 4. Add the libraries from `link-libraries.txt` to the linker.
@@ -210,7 +210,10 @@ This source drop intentionally does not add:
 
 Those are the next engineering layers after the single-control WinUI integration is proven.
 
-
 ## V8 stress-test guide
 
 See `V8_VALIDATION.md` for the F2, mixed-DPI/cross-monitor, sustained high-motion, and display/device disruption validation matrix.
+
+## Repository source layout note
+
+On the GitHub validation branch, the renderer implementation is split into ordered `LiquidGlassRenderer.part*.inc` files because the connected GitHub writer has a per-write text-size limit. `LiquidGlassRenderer.cpp` includes those parts in order. The concatenated `.inc` contents are byte-for-byte the original V8 renderer source; this changes packaging only, not runtime behavior.
