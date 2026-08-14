@@ -95,7 +95,7 @@
                             deviceRemovedEvents.fetch_add(1);
                             lastRenderHresult.store(
                                 static_cast<LONG>(deviceReason));
-                            throw;
+                            winrt::throw_hresult(deviceReason);
                         }
 
                         captureRecoveryFailures.fetch_add(1);
