@@ -99,14 +99,41 @@ Already passed before this seal gate:
 
 A real `GraphicsCaptureItem.Closed` event remains useful evidence if a physical display disconnect happens naturally, but `closed=0` does **not** block formal integration after this seal gate passes.
 
+## Final Windows seal result — PASS
+
+Completed on 2026-08-14.
+
+### Lifecycle
+
+- 50/50 iterations passed.
+- `afail=0 / btimeout=0 / devrem=0 / recF=0 / thread=OK`.
+- All processes exited normally; no forced cleanup.
+- The original harness helper named `H` collided with PowerShell's `h` / `Get-History` alias on Windows. The repository script has been corrected to use `Wait-Hwnd`.
+
+### 60-minute soak
+
+Result: `PASS_WITH_WARNING`, accepted after reviewing the resource trends.
+
+Hard gate remained clean:
+
+- `rec=12/0`;
+- `afail=0 / btimeout=0 / devrem=0`;
+- `thread=OK`;
+- `age < 31ms`;
+- final `excl=YES / shot=OFF`.
+
+Resource observations:
+
+- private memory rose from roughly 114MB toward the 430–480MB range during the first ~30 minutes, then plateaued and ended near 427MB; this was not a continuing monotonic leak;
+- Handle count rose early and plateaued around 530 by approximately minute 5;
+- `drop` had one late transient jump to 59 around minute 55 during an F2/display-change exercise, while `age` and thread health remained normal. Keep this as an integration-era observation, not a seal blocker.
+
 ## Decision after the gate
 
-If the soak is `PASS` (or a leak warning is manually reviewed as a plateau) **and** the lifecycle test is `PASS`, V9 Recovery Phase 1 is considered sealed.
+**V9 Recovery Phase 1 is sealed.**
 
-The next branch should be:
+The next branch is:
 
 `agent/liquid-glass-integration`
 
 That branch should integrate exactly one Liquid Glass region into the current Shijian application behind a fallback/feature switch. It should not immediately replace the whole UI and should not start V9 Phase 2 device reconstruction without actual `devrem` evidence.
-
-If this gate fails, keep work on `agent/liquid-glass-v9-recovery` and fix only the reproduced failure before integration.
