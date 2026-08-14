@@ -7,6 +7,16 @@
         m_impl->SignalState();
     }
 
+    void LiquidGlassRenderer::RequestCaptureRefresh()
+    {
+        if (!m_impl)
+        {
+            return;
+        }
+
+        m_impl->RequestCaptureRestart();
+    }
+
     void LiquidGlassRenderer::SetPressed(bool value)
     {
         if (!m_impl)
@@ -104,8 +114,12 @@
         stats.affinityFailures = m_impl->affinityFailures.load();
         stats.screenshotBarrierTimeouts = m_impl->screenshotBarrierTimeouts.load();
         stats.deviceRemovedEvents = m_impl->deviceRemovedEvents.load();
+        stats.captureClosedEvents = m_impl->captureClosedEvents.load();
+        stats.captureRecoveryAttempts = m_impl->captureRecoveryAttempts.load();
+        stats.captureRecoveryFailures = m_impl->captureRecoveryFailures.load();
         stats.hostMonitorCount = m_impl->publishedHostMonitorCount.load();
         stats.lastRenderHresult = m_impl->lastRenderHresult.load();
+        stats.lastCaptureRecoveryHresult = m_impl->lastCaptureRecoveryHresult.load();
         stats.renderThreadAlive = m_impl->renderThreadAlive.load();
         stats.screenshotMode = m_impl->screenshotMode.load();
 
