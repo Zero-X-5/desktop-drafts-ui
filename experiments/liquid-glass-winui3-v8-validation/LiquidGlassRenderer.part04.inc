@@ -138,6 +138,15 @@
 
             try
             {
+                if (captureItem)
+                {
+                    captureItem.Closed(captureItemClosedToken);
+                }
+            }
+            catch (...) {}
+
+            try
+            {
                 if (captureSession)
                 {
                     captureSession.Close();
@@ -236,6 +245,14 @@
                         {
                             SetEvent(captureEvent);
                         }
+                    });
+
+            captureItemClosedToken =
+                captureItem.Closed(
+                    [this](auto const&, auto const&)
+                    {
+                        captureClosedEvents.fetch_add(1);
+                        RequestCaptureRestart();
                     });
 
             captureSession =
