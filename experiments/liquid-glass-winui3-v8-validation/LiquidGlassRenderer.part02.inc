@@ -50,6 +50,7 @@
         std::atomic<bool> pressed{ false };
         std::atomic<bool> screenshotMode{ false };
         std::atomic<bool> captureFrozen{ false };
+        std::atomic<bool> captureRestartRequested{ false };
 
         // Serializes WGC frame consumption with F2 display-affinity transitions.
         // This makes "freeze before WDA_NONE" a real barrier instead of only an
@@ -124,6 +125,7 @@
         WGC::Direct3D11CaptureFramePool framePool{ nullptr };
         WGC::GraphicsCaptureSession captureSession{ nullptr };
         winrt::event_token frameArrivedToken{};
+        winrt::event_token captureItemClosedToken{};
 
         ComPtr<ID3D11Texture2D> captureCopy;
         ComPtr<ID3D11ShaderResourceView> captureSrv;
@@ -150,8 +152,12 @@
         std::atomic<uint64_t> affinityFailures{};
         std::atomic<uint64_t> screenshotBarrierTimeouts{};
         std::atomic<uint64_t> deviceRemovedEvents{};
+        std::atomic<uint64_t> captureClosedEvents{};
+        std::atomic<uint64_t> captureRecoveryAttempts{};
+        std::atomic<uint64_t> captureRecoveryFailures{};
         std::atomic<uint32_t> publishedHostMonitorCount{};
         std::atomic<LONG> lastRenderHresult{};
+        std::atomic<LONG> lastCaptureRecoveryHresult{};
         std::atomic<bool> renderThreadAlive{ false };
         std::atomic<uint32_t> publishedCaptureWidth{};
         std::atomic<uint32_t> publishedCaptureHeight{};
@@ -168,6 +174,12 @@
             {
                 SetEvent(stateEvent);
             }
+        }
+
+        void RequestCaptureRestart()
+        {
+            captureRestartRequested.store(true);
+            SignalState();
         }
 
         void CreateDevices()
