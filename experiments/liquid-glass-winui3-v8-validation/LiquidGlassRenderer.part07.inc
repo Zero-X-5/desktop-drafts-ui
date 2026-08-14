@@ -43,6 +43,81 @@
                 drawingSurfaceInterop->EndDraw());
         }
 
+        void RecoverCaptureIfNeeded()
+        {
+            if (!captureRestartRequested.load() || captureFrozen.load())
+            {
+                return;
+            }
+
+            captureRestartRequested.store(false);
+
+            constexpr int kMaxRecoveryAttempts = 3;
+            HRESULT lastFailure = E_FAIL;
+
+            for (int attempt = 0; attempt < kMaxRecoveryAttempts; ++attempt)
+            {
+                captureRecoveryAttempts.fetch_add(1);
+
+                RECT rect = hostScreenRect;
+                HMONITOR monitor =
+                    MonitorFromRect(
+                        &rect,
+                        MONITOR_DEFAULTTONEAREST);
+
+                if (!monitor)
+                {
+                    lastFailure = HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+                    captureRecoveryFailures.fetch_add(1);
+                }
+                else
+                {
+                    try
+                    {
+                        StartCapture(monitor);
+                        lastCaptureRecoveryHresult.store(S_OK);
+                        return;
+                    }
+                    catch (winrt::hresult_error const& error)
+                    {
+                        lastFailure = error.code();
+
+                        // Capture-session failures are recoverable, but a real
+                        // D3D device removal remains a V8/V9 Phase-2 boundary:
+                        // surface it as DEAD instead of hiding it in retries.
+                        HRESULT deviceReason =
+                            d3dDevice
+                            ? d3dDevice->GetDeviceRemovedReason()
+                            : S_OK;
+
+                        if (FAILED(deviceReason))
+                        {
+                            deviceRemovedEvents.fetch_add(1);
+                            lastRenderHresult.store(
+                                static_cast<LONG>(deviceReason));
+                            throw;
+                        }
+
+                        captureRecoveryFailures.fetch_add(1);
+                    }
+                    catch (...)
+                    {
+                        lastFailure = E_FAIL;
+                        captureRecoveryFailures.fetch_add(1);
+                    }
+                }
+
+                if (attempt + 1 < kMaxRecoveryAttempts)
+                {
+                    std::this_thread::sleep_for(
+                        std::chrono::milliseconds(50 * (attempt + 1)));
+                }
+            }
+
+            lastCaptureRecoveryHresult.store(
+                static_cast<LONG>(lastFailure));
+        }
+
         void ApplyBoundsIfNeeded()
         {
             uint64_t revision = boundsRevision.load();
@@ -90,7 +165,7 @@
 
             if (monitor != captureMonitor)
             {
-                StartCapture(monitor);
+                captureRestartRequested.store(true);
             }
         }
 
@@ -100,12 +175,14 @@
                 winrt::apartment_type::multi_threaded);
             renderThreadAlive.store(true);
             lastRenderHresult.store(S_OK);
+            lastCaptureRecoveryHresult.store(S_OK);
 
             try
             {
                 while (!stop.load())
                 {
                     ApplyBoundsIfNeeded();
+                    RecoverCaptureIfNeeded();
 
                     HANDLE handles[]
                     {
@@ -131,10 +208,12 @@
                     }
 
                     ApplyBoundsIfNeeded();
+                    RecoverCaptureIfNeeded();
 
                     if (!captureFrozen.load())
                     {
                         DrainCaptureFrames();
+                        RecoverCaptureIfNeeded();
                     }
 
                     if (!hasCaptureFrame)
