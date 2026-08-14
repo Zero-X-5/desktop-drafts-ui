@@ -2,7 +2,8 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parent
 header = (root / "LiquidGlassRenderer.h").read_text(encoding="utf-8")
-cpp = (root / "LiquidGlassRenderer.cpp").read_text(encoding="utf-8")
+parts = sorted(root.glob("LiquidGlassRenderer.part*.inc"))
+cpp = "".join(p.read_text(encoding="utf-8") for p in parts) if parts else (root / "LiquidGlassRenderer.cpp").read_text(encoding="utf-8")
 host = (root / "WinUIHost" / "MainWindow.xaml.cpp").read_text(encoding="utf-8")
 
 # Preserve V7 optical/product architecture.
