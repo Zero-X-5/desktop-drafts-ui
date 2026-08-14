@@ -22,7 +22,11 @@ checks = {
         "captureRecoveryFailures.fetch_add(1)",
         "std::chrono::milliseconds(50 * (attempt + 1))",
     ]),
-    "recovery deferred while screenshot frozen": "captureRestartRequested.load() || captureFrozen.load()" in cpp,
+    "recovery serialized with F2 gate": all(x in cpp for x in [
+        "std::scoped_lock recoveryLock(captureGate)",
+        "if (captureFrozen.load())",
+        "captureRestartRequested.exchange(false)",
+    ]),
     "frame size change uses recovery queue": all(x in cpp for x in [
         "contentSize.Width) != captureWidth",
         "latest.Close();\n                    RequestCaptureRestart();",
@@ -51,15 +55,19 @@ for name, passed in checks.items():
     assert passed, name
     print(f"{name}: PASS")
 
-# Small deterministic model for the recovery contract. This is not a WGC
-# integration test; it checks the intended bounded/frozen/terminal semantics.
-def recover(outcomes, frozen=False, device_removed=False):
-    pending = True
+# Deterministic recovery contract model. This is intentionally platform-free:
+# it verifies bounded retry, screenshot-mode deferral, and terminal device loss.
+def recover(outcomes, frozen=False, device_removed=False, pending=True):
     attempts = 0
     failures = 0
     alive = True
+    if not pending:
+        return pending, attempts, failures, alive
     if frozen:
         return pending, attempts, failures, alive
+
+    # Atomic exchange(false): consume exactly one pending request without
+    # overwriting a concurrently arriving request.
     pending = False
     for ok in outcomes[:3]:
         attempts += 1
@@ -75,5 +83,6 @@ assert recover([False, False, True]) == (False, 3, 2, True)
 assert recover([False, False, False, True]) == (False, 3, 3, True)
 assert recover([True], frozen=True) == (True, 0, 0, True)
 assert recover([False], device_removed=True) == (False, 1, 0, False)
+assert recover([True], pending=False) == (False, 0, 0, True)
 print("V9 bounded recovery state model: PASS")
 print("V9 capture-session recovery: PASS")
