@@ -63,9 +63,116 @@ V8 validation is V7 plus lifecycle/diagnostic hardening. The optical shader and 
 3. If a graphics-device reset occurs, V8 should expose it via `device-removed`, `hr`, and `thread=DEAD` rather than leaving stale healthy-looking FPS values.
 4. Automatic D3D/Composition device recreation is intentionally not implemented in this validation build; a DEAD thread currently requires renderer/app restart.
 
-## Pass gate before architecture convergence
+## Real-machine results — 2026-08-14
 
-- F2 stress: no recursive self-capture, no affinity failures, no persistent screenshot state mismatch.
-- Mixed-DPI round trips: no render-thread death and no permanent capture freeze.
-- Sustained high-motion load: frame age returns to normal after stress; dropped frames are measurable rather than hidden.
-- Display disruption: failure/recovery state is unambiguous from F1; no stale "55 FPS" masking a dead renderer.
+The GitHub V8 renderer hardening was pulled from `agent/liquid-glass-v8-validation`, copied into the local prototype, adapted from the WinUI Composition host to the existing Win32 layered-window host, and built as a fully static Win32 executable. The renderer hardening itself was retained during that host adaptation.
+
+Observed normal state before stress:
+
+- `R-FPS 51`
+- `WGC 51`
+- `CPU 1.83ms`
+- `cap 3200x2000`
+- `frames=767`
+- `drop=0`
+- `age=15ms`
+- `rebinds=1`
+- `mon=1`
+- `afail=0`
+- `btimeout=0`
+- `devrem=0`
+- `hr=0x0`
+- `thread=OK`
+- `excl=YES`
+- `shot=OFF`
+
+F2 functional check also passed: ON produced `excl=NO / shot=ON` with capture age increasing while frozen; OFF restored `excl=YES / shot=OFF`, and capture age returned to 28 ms.
+
+### A. F2 transition stress — PASS
+
+Executed 80 rapid F2 presses plus 12 long-press attempts.
+
+Final/observed results:
+
+- `afail=0` throughout.
+- `btimeout=0` throughout; the 250 ms capture barrier did not time out.
+- `thread=OK` throughout.
+- Final state correctly returned to `excl=YES / shot=OFF`.
+- `drop` accumulated 38 frames during repeated freeze/resume transitions, then stopped increasing after normal capture resumed.
+
+Interpretation: the strict capture gate and fail-closed affinity ordering survived repeated state transitions without deadlock, affinity failure, persistent screenshot-state mismatch, or continued capture backlog. The 38 dropped frames are treated as bounded transition-time coalescing rather than a sustained throughput failure because the counter stopped growing after recovery.
+
+### Additional in-monitor movement stress — PASS
+
+Executed 40 rapid drags, including screen corners and edges.
+
+Results:
+
+- `rebinds=1` remained stable; no rebind storm.
+- `drop=0` during movement.
+- `thread=OK` remained stable.
+- `mon` could briefly become `0` while the host rectangle was partially/fully outside all monitor rectangles at a screen edge. This is a valid geometry-observability state, not by itself a capture failure.
+
+This test validates high-frequency bounds updates and ordinary same-monitor movement. It does **not** replace matrix B, because a true monitor-A -> monitor-B capture-source rebind was not exercised here.
+
+### C. Capture bandwidth / high-motion stress — PASS for tested hardware/workload
+
+Ran an Edge full-screen high-motion animation/scroll workload for three minutes with a 3200x2000 WGC source.
+
+| Time | R-FPS | WGC | CPU | drop | age |
+|---|---:|---:|---:|---:|---:|
+| t0 | 55 | 55 | 2.11 ms | 0 | 5 ms |
+| t60s | 55 | 55 | 2.31 ms | 0 | 12 ms |
+| t120s | 55 | 55 | 2.48 ms | 0 | 12 ms |
+| t180s | 55 | 55 | 2.28 ms | 0 | 3 ms |
+
+Final cumulative capture count: `frames=10175`.
+
+Interpretation:
+
+- `drop=0` for the complete sustained run.
+- `age` stayed below 15 ms and showed no upward trend.
+- Renderer and WGC rates remained at roughly 55 FPS.
+- CPU optical-frame time fluctuated in a narrow ~2.1-2.5 ms range and did not show sustained degradation.
+- The full-screen 3200x2000 `CopyResource` path is therefore not a demonstrated bottleneck on this tested single-renderer hardware/workload.
+
+This result does not claim unlimited capacity for 4K/5K, very high refresh rates, integrated GPUs, battery-saving modes, HDR, or multiple independent renderer instances.
+
+### B. Cross-monitor / mixed-DPI stress — PENDING
+
+The completed movement test did not perform repeated true monitor-source transitions. Still required:
+
+- full monitor A -> monitor B transitions;
+- preferably different DPI/scaling between A and B;
+- confirm expected `rebinds` increments once per source transition rather than forming a rebind storm;
+- confirm `age` returns to normal and `thread=OK` remains stable after every rebind;
+- observe the known `monitors=2` single-source sampling limitation while straddling the seam.
+
+### D. Display/device disruption — PENDING
+
+Still required:
+
+- disconnect/reconnect a secondary monitor;
+- display resolution/scaling/mode changes;
+- observe capture recovery/rebind behavior;
+- if a graphics reset/device removal occurs, confirm `devrem/hr/thread` exposes the failure unambiguously.
+
+Automatic device reconstruction remains outside V8.
+
+## Current pass gate before architecture convergence
+
+Passed on real hardware:
+
+- F2 stress: PASS.
+- F2 affinity/barrier fail-safe observability: PASS.
+- High-frequency same-monitor movement/bounds updates: PASS.
+- Sustained 3200x2000 high-motion single-renderer capture: PASS.
+
+Still open:
+
+- Mixed-DPI true cross-monitor round trips.
+- Display/device disruption and recovery observability.
+- Dual-monitor stitching is still an intentionally missing capability rather than a failed test.
+- HDR and shared capture for multiple Liquid Glass controls remain productization work.
+
+Do not create a stability-only V9 based solely on the already-passed A/C tests. First finish B/D; only implement V9 if those tests expose a concrete lifecycle defect, or move to architecture convergence/shared capture once the remaining validation gate is satisfied.
