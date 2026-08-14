@@ -45,12 +45,27 @@
 
         void RecoverCaptureIfNeeded()
         {
-            if (!captureRestartRequested.load() || captureFrozen.load())
+            if (!captureRestartRequested.load())
             {
                 return;
             }
 
-            captureRestartRequested.store(false);
+            // Recovery mutates the WGC session, so it participates in the same
+            // gate as DrainCaptureFrames/F2. This preserves V8's strict rule:
+            // no capture-session work can cross the freeze -> WDA_NONE barrier.
+            std::scoped_lock recoveryLock(captureGate);
+
+            if (captureFrozen.load())
+            {
+                // Keep the request pending. F2 OFF signals the render thread and
+                // recovery will run only after exclusion has been restored.
+                return;
+            }
+
+            if (!captureRestartRequested.exchange(false))
+            {
+                return;
+            }
 
             constexpr int kMaxRecoveryAttempts = 3;
             HRESULT lastFailure = E_FAIL;
