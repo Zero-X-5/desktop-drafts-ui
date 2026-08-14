@@ -222,16 +222,17 @@ namespace winrt::LiquidGlassWinUI::implementation
     {
         auto s = m_renderer.Stats();
 
-        wchar_t text[768]{};
+        wchar_t text[896]{};
 
         swprintf_s(
             text,
             ARRAYSIZE(text),
-            L"Liquid Glass WinUI V8 validation\n"
+            L"Liquid Glass WinUI V9 recovery\n"
             L"render %.1f fps   WGC %.1f fps   CPU %.2f ms   thread=%s\n"
             L"capture %ux%u   frames %llu   dropped %llu   age %.0f ms\n"
-            L"rebinds %llu   affinity-fail %llu   barrier-timeout %llu\n"
-            L"monitors %u   device-removed %llu   hr=0x%08X\n"
+            L"rebinds %llu   closed %llu   recovery %llu/%llu   rec-hr=0x%08X\n"
+            L"affinity-fail %llu   barrier-timeout %llu   monitors %u\n"
+            L"device-removed %llu   hr=0x%08X\n"
             L"self-excluded=%s   screenshot-mode=%s",
             s.renderFps,
             s.captureFps,
@@ -243,6 +244,10 @@ namespace winrt::LiquidGlassWinUI::implementation
             static_cast<unsigned long long>(s.droppedCaptureFrames),
             s.captureAgeMs,
             static_cast<unsigned long long>(s.monitorRebinds),
+            static_cast<unsigned long long>(s.captureClosedEvents),
+            static_cast<unsigned long long>(s.captureRecoveryAttempts),
+            static_cast<unsigned long long>(s.captureRecoveryFailures),
+            static_cast<unsigned int>(s.lastCaptureRecoveryHresult),
             static_cast<unsigned long long>(s.affinityFailures),
             static_cast<unsigned long long>(s.screenshotBarrierTimeouts),
             s.hostMonitorCount,
@@ -271,7 +276,14 @@ namespace winrt::LiquidGlassWinUI::implementation
             {
             case WM_WINDOWPOSCHANGED:
             case WM_DPICHANGED:
+                self->UpdateGlassScreenRect();
+                break;
+
             case WM_DISPLAYCHANGE:
+                // Display topology/mode changes can invalidate a WGC item even
+                // when the glass RECT and DPI are unchanged. Force a capture
+                // refresh independently of the geometry de-duplication path.
+                self->m_renderer.RequestCaptureRefresh();
                 self->UpdateGlassScreenRect();
                 break;
 
