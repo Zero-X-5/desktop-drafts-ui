@@ -1,0 +1,11 @@
+<!-- Merge these libraries into the C++/WinRT project's Linker > Input.
+     The Windows App SDK package/template provides the WinUI libraries. -->
+
+d3d11.lib
+dxgi.lib
+d3dcompiler.lib
+d2d1.lib
+dwrite.lib
+windowsapp.lib
+runtimeobject.lib
+comctl32.lib
