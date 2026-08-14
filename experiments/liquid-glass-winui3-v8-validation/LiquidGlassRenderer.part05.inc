@@ -23,9 +23,8 @@
                 if (static_cast<UINT>(contentSize.Width) != captureWidth ||
                     static_cast<UINT>(contentSize.Height) != captureHeight)
                 {
-                    auto monitor = captureMonitor;
                     latest.Close();
-                    StartCapture(monitor);
+                    RequestCaptureRestart();
                     return;
                 }
 
@@ -75,8 +74,7 @@
             }
             catch (winrt::hresult_error const&)
             {
-                auto monitor = captureMonitor;
-                StartCapture(monitor);
+                RequestCaptureRestart();
             }
         }
 
