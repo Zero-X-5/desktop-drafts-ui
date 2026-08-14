@@ -42,8 +42,12 @@ namespace Shijian::LiquidGlass
         uint64_t affinityFailures{};
         uint64_t screenshotBarrierTimeouts{};
         uint64_t deviceRemovedEvents{};
+        uint64_t captureClosedEvents{};
+        uint64_t captureRecoveryAttempts{};
+        uint64_t captureRecoveryFailures{};
         uint32_t hostMonitorCount{};
         int32_t lastRenderHresult{};
+        int32_t lastCaptureRecoveryHresult{};
         bool renderThreadAlive{};
         bool selfExcluded{};
         bool screenshotMode{};
@@ -55,9 +59,9 @@ namespace Shijian::LiquidGlass
     // - D3D11 owns the optical passes.
     // - Microsoft.UI.Composition owns final presentation in the XAML visual tree.
     //
-    // Attach() and SetHostScreenRect() must be called from the WinUI thread.
-    // The D3D11 immediate context and WGC frame consumption are serialized on
-    // the internal render thread.
+    // Attach(), SetHostScreenRect(), and RequestCaptureRefresh() must be called
+    // from the WinUI thread. The D3D11 immediate context and WGC frame
+    // consumption/recovery are serialized on the internal render thread.
     class LiquidGlassRenderer final
     {
     public:
@@ -76,6 +80,11 @@ namespace Shijian::LiquidGlass
         // screenRect is in physical screen pixels and includes the optical
         // shadow margin (the reference host is 274x148 DIPs).
         void SetHostScreenRect(RECT const& screenRect, float rasterizationScale);
+
+        // Force the current monitor capture session to be recreated even when
+        // host geometry/DPI did not change. WM_DISPLAYCHANGE uses this to
+        // recover from display-topology changes that invalidate a WGC item.
+        void RequestCaptureRefresh();
 
         void SetPressed(bool pressed);
 
