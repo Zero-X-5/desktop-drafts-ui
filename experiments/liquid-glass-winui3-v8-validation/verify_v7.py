@@ -3,7 +3,8 @@ import re
 
 root = Path(__file__).resolve().parent
 header = (root / "LiquidGlassRenderer.h").read_text(encoding="utf-8")
-cpp = (root / "LiquidGlassRenderer.cpp").read_text(encoding="utf-8")
+parts = sorted(root.glob("LiquidGlassRenderer.part*.inc"))
+cpp = "".join(p.read_text(encoding="utf-8") for p in parts) if parts else (root / "LiquidGlassRenderer.cpp").read_text(encoding="utf-8")
 xaml = (root / "WinUIHost" / "MainWindow.xaml").read_text(encoding="utf-8")
 main_cpp = (root / "WinUIHost" / "MainWindow.xaml.cpp").read_text(encoding="utf-8")
 
@@ -64,7 +65,6 @@ assert "SetScreenshotMode" in main_cpp
 assert "drawContext->Clear" in cpp
 assert "drawingSurfaceInterop->BeginDraw" in cpp
 assert "drawingSurfaceInterop->EndDraw" in cpp
-
 
 # WinUI host/template hygiene.
 assert "RootGrid().Loaded" in main_cpp
