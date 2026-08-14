@@ -1,0 +1,112 @@
+<Window
+    x:Class="LiquidGlassWinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Liquid Glass WinUI Product Prototype">
+
+    <Grid
+        x:Name="RootGrid"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+        <StackPanel
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Spacing="18">
+
+            <TextBlock
+                Text="WinUI 3 + WGC + D3D11 + Microsoft.UI.Composition"
+                HorizontalAlignment="Center"
+                FontSize="14"
+                Opacity="0.72"/>
+
+            <!--
+                274x148 includes the optical shadow/blur margin.
+                XAML owns input/text/accessibility. Native DirectX only draws
+                the glass material into GlassSurfaceHost.
+            -->
+            <Grid
+                x:Name="GlassContainer"
+                Width="274"
+                Height="148">
+
+                <Grid
+                    x:Name="GlassSurfaceHost"
+                    IsHitTestVisible="False"/>
+
+                <Button
+                    x:Name="GlassButton"
+                    Width="186"
+                    Height="60"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Padding="0"
+                    RenderTransformOrigin="0.5,0.5"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    PointerPressed="GlassButton_PointerPressed"
+                    PointerReleased="GlassButton_PointerReleased"
+                    PointerCanceled="GlassButton_PointerCanceled"
+                    Click="GlassButton_Click">
+
+                    <Button.RenderTransform>
+                        <ScaleTransform
+                            x:Name="GlassButtonScale"
+                            ScaleX="1"
+                            ScaleY="1"/>
+                    </Button.RenderTransform>
+
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid Background="Transparent">
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="8">
+                                    <TextBlock
+                                        Text="Generate"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                        VerticalAlignment="Center"/>
+                                    <PathIcon
+                                        Width="20"
+                                        Height="20"
+                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                        Data="M13,2 L3,14 L12,14 L11,22 L21,10 L12,10 Z"/>
+                                </StackPanel>
+                            </Grid>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
+
+            <TextBlock
+                Text="F1: performance overlay   ·   F2: screenshot mode"
+                HorizontalAlignment="Center"
+                FontSize="12"
+                Opacity="0.56"/>
+        </StackPanel>
+
+        <Border
+            x:Name="DebugPanel"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Margin="16"
+            Padding="12,8"
+            CornerRadius="8"
+            Background="#B0000000"
+            Visibility="Collapsed">
+            <TextBlock
+                x:Name="DebugText"
+                FontFamily="Cascadia Mono, Consolas"
+                FontSize="12"
+                Foreground="White"/>
+        </Border>
+    </Grid>
+</Window>
