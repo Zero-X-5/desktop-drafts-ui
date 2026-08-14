@@ -8,7 +8,7 @@ shijian/
 ├── STATUS.md
 ├── CODEMAP.md
 ├── experiments/
-│   └── liquid-glass-winui3-v8-validation/   独立 WinUI 3 / WGC / D3D11 验证源码
+│   └── liquid-glass-winui3-v8-validation/   V8 基线 + V9 capture recovery 独立实验源码
 ├── src/
 │   ├── index.html
 │   ├── main.js                 前端加载入口
@@ -98,18 +98,59 @@ shijian/
 
 ## 独立实验 (`experiments/liquid-glass-winui3-v8-validation/`)
 
-该目录属于 `agent/liquid-glass-v8-validation` 分支上的独立验证源码，**尚未接入 `src/` 或 `src-tauri/`，不会改变现有拾笺 Tauri 架构**。
+当前 `agent/liquid-glass-v9-recovery` 继续复用 V8 source-drop 目录，**尚未接入 `src/` 或 `src-tauri/`，不会改变现有拾笺 Tauri 架构**。
 
-- `LiquidGlassRenderer.h`：renderer 公共接口、F1 健康统计结构、F2 截图模式入口。
-- `LiquidGlassRenderer.cpp`：很小的编译入口，按顺序包含 `LiquidGlassRenderer.part01.inc` ～ `part08.inc`。
-- `LiquidGlassRenderer.part*.inc`：原始 V8 renderer 的无损分片；拼接后与单文件 V8 实现逐字节一致。分片仅用于绕过连接器单文件写入限制，不改变一个翻译单元的编译语义。
-- `WinUIHost/MainWindow.xaml*`：WinUI 3 XAML 宿主、F1/F2 入口和 GlassSurfaceHost。
-- `V8_VALIDATION.md`：F2、跨屏/混合 DPI、高动态负载、显示设备扰动四组真机验证矩阵。
-- `verify_v7.py`：确认 V7 光学/产品架构约束没有退化。
-- `verify_v8.py`：确认 capture gate、affinity fail-safe、统计、跨屏可观测性和 bounds snapshot 等 V8 加固项。
+### 核心入口
+
+- `LiquidGlassRenderer.h`：renderer 公共接口、F1 统计结构、F2 截图模式，以及 V9 `RequestCaptureRefresh()`。
+- `LiquidGlassRenderer.cpp`：小型编译入口，顺序 include `LiquidGlassRenderer.part01.inc` ～ `part08.inc`。
+- `LiquidGlassRenderer.part01.inc` / `part03.inc` / `part06.inc`：光学/HLSL、Composition/D3D 主路径；V9 Phase 1 未改这些光学实现。
+- `LiquidGlassRenderer.part02.inc`：renderer 状态；V9 新增 capture restart flag、Closed token、recovery 统计。
+- `LiquidGlassRenderer.part04.inc`：`StopCapture` / `StartCapture` / FrameArrived；V9 在此订阅和注销 `GraphicsCaptureItem.Closed`。
+- `LiquidGlassRenderer.part05.inc`：`DrainCaptureFrames`；ContentSize 变化和 WGC hresult 改为投递 recovery request。
+- `LiquidGlassRenderer.part07.inc`：`RecoverCaptureIfNeeded`、bounds/rebind、render-thread 生命周期；V9 的 3 次有界恢复和 device-removed 分界集中在这里。
+- `LiquidGlassRenderer.part08.inc`：公共 `RequestCaptureRefresh()`、F2 和 Stats 导出。
+
+### 宿主与验证
+
+- `WinUIHost/MainWindow.xaml*`：WinUI 3 宿主、F1/F2；`WM_DISPLAYCHANGE` 现在无条件请求 capture refresh。
+- `V8_VALIDATION.md`：V8 已执行/待执行验证证据。
+- `V9_RECOVERY.md`：V9 Phase 1 恢复目标、状态机与后续 Windows 验证矩阵。
+- `verify_v7.py`：V7 光学/产品架构约束。
+- `verify_v8.py`：V8 capture gate、affinity、健康指标和 bounds snapshot 回归。
+- `verify_v9.py`：Closed 订阅/注销、有界重试、captureGate、atomic request consume、display-change 强刷和 device-removed 终止语义。
 - `README.md` / `ARCHITECTURE.md`：WinUI 3 + WGC + D3D11 + Microsoft.UI.Composition 集成说明。
 
-当前实验仍采用单显示器 capture source；玻璃跨越两屏时只绑定最近/主相交显示器，真正双屏拼接尚未实现。HDR、完整 device-lost 自动重建和多 Glass 控件共享 capture session 也仍属于后续层。
+### V9 Phase 1 recovery 数据流
+
+```text
+GraphicsCaptureItem.Closed
+ContentSize changed
+Drain hresult
+WM_DISPLAYCHANGE
+monitor changed
+        ↓
+captureRestartRequested = true
+        ↓
+render thread
+        ↓
+captureGate
+        ↓
+F2 frozen? ── yes → keep pending
+        │ no
+        ↓
+atomic exchange(false)
+        ↓
+MonitorFromRect(current host rect)
+        ↓
+StartCapture (max 3 attempts, 50/100ms backoff)
+        ↓
+normal capture restored
+```
+
+若 `GetDeviceRemovedReason()` 返回真实设备错误，Phase 1 不做普通 retry 隐藏问题，而是保留 `devrem/hr/thread=DEAD` 语义；完整 D3D/D2D/Composition 重建属于 Phase 2。
+
+当前实验仍采用单显示器 capture source；玻璃横跨两屏时没有真正 dual-monitor stitching。HDR 和多 Glass 控件共享 capture session 也仍是后续产品化层。
 
 ## 关键决策
 - 禁止恢复运行时原生 `setSize` 状态切换
@@ -118,4 +159,5 @@ shijian/
 - 保持单窗口、单 WebView、单 DOM；不拆分目录和预览窗口
 - 若调整尺寸或圆角，必须同时更新 Rust Region 常量和 CSS 固定画布变量
 - Windows 实机测试必须覆盖多 DPI、双显示器和左右换侧
-- Liquid Glass V8 在验证完成前保持独立实验，不直接复制/接线进现有 Tauri 主应用
+- Liquid Glass V9 仍是独立实验，不直接接线进现有 Tauri 主应用
+- V9 Phase 1 只恢复 WGC capture session；没有真机 device-removal 证据前不实现完整 D3D/Composition reconstruction
