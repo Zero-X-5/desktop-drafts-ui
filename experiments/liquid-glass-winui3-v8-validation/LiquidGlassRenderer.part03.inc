@@ -28,7 +28,18 @@
                     abi_comp::ICompositionDrawingSurfaceInterop>();
 
             surfaceBrush = compositor.CreateSurfaceBrush(drawingSurface);
-            surfaceBrush.Stretch(MUC::CompositionStretch::Fill);
+
+            // The drawing surface is resized in physical pixels, while XAML
+            // child visuals are measured in DIPs. Stretch=Fill introduces an
+            // avoidable resample and can expose transient blank/edge pixels
+            // while the window is moving or changing DPI. Keep the surface at
+            // native pixel size and let SetHostScreenRect apply 1 / DPI scale.
+            surfaceBrush.Stretch(MUC::CompositionStretch::None);
+            surfaceBrush.HorizontalAlignmentRatio(0.0f);
+            surfaceBrush.VerticalAlignmentRatio(0.0f);
+            surfaceBrush.SnapToPixels(true);
+            surfaceBrush.BitmapInterpolationMode(
+                MUC::CompositionBitmapInterpolationMode::NearestNeighbor);
 
             spriteVisual = compositor.CreateSpriteVisual();
             spriteVisual.Brush(surfaceBrush);
