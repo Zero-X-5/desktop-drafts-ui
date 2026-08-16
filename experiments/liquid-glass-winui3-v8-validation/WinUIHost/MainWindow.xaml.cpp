@@ -16,7 +16,7 @@ namespace winrt::LiquidGlassWinUI::implementation
     namespace
     {
         constexpr float kWindowWidthDip = 430.0f;
-        constexpr float kWindowHeightDip = 485.0f;
+        constexpr float kWindowHeightDip = 520.0f;
     }
 
     MainWindow::MainWindow()
