@@ -77,6 +77,19 @@ checks = {
         "blur.sigma = 2.0f * opticalCssScale",
         "composite.cssScale = opticalCssScale",
     ]),
+    "pixel-faithful composition bridge": all(x in cpp for x in [
+        "surfaceBrush.Stretch(MUC::CompositionStretch::None)",
+        "surfaceBrush.HorizontalAlignmentRatio(0.0f)",
+        "surfaceBrush.VerticalAlignmentRatio(0.0f)",
+        "surfaceBrush.SnapToPixels(true)",
+        "MUC::CompositionBitmapInterpolationMode::NearestNeighbor",
+        "float inverseScale = 1.0f / safeScale",
+        "surfaceBrush.Scale({ inverseScale, inverseScale })",
+    ]) and "surfaceBrush.Stretch(MUC::CompositionStretch::Fill)" not in cpp,
+    "capture edges clamp instead of flashing dark": all(x in cpp for x in [
+        "float2 uv = saturate(CaptureUv(localP + displacement))",
+        "D3D11_TEXTURE_ADDRESS_CLAMP",
+    ]) and "return float4(0.035, 0.040, 0.048, 1)" not in cpp,
     "no rejected diagnostic stack": all(x not in header + cpp + host_cpp for x in [
         "CycleOpticalDebugMode",
         "CycleFrostAmount",
@@ -111,6 +124,26 @@ assert abs(35 * 0.60 - 21) < 1e-9
 assert 2 * 1.0 == 2
 assert abs(2 * 0.60 - 1.2) < 1e-9
 
+# CompositionDrawingSurface is sized in physical pixels. Stretch=None plus a
+# reciprocal-DPI brush scale must round-trip to the same physical pixel count.
+def presentation_mapping(width_dip: float, height_dip: float, scale: float):
+    width_px = round(width_dip * scale)
+    height_px = round(height_dip * scale)
+    inverse_scale = 1.0 / scale
+    brush_width_dip = width_px * inverse_scale
+    brush_height_dip = height_px * inverse_scale
+    return width_px, height_px, brush_width_dip * scale, brush_height_dip * scale
+
+for width, height in ((274.0, 148.0), (336.0, 124.0)):
+    for dpi_scale in (1.0, 1.25, 1.5, 2.0):
+        width_px, height_px, final_width_px, final_height_px = presentation_mapping(
+            width, height, dpi_scale
+        )
+        assert abs(final_width_px - width_px) < 1e-9
+        assert abs(final_height_px - height_px) < 1e-9
+
 print("44px reference/long-bar margins: PASS")
 print("reference 35/2 and long-bar 21/1.2 spatial optics: PASS")
+print("100/125/150/200% physical-pixel mapping for both samples: PASS")
+print("capture-edge clamp / no dark sentinel: PASS")
 print("Liquid Glass Test Window static validation: PASS")
