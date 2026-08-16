@@ -1,6 +1,19 @@
+            float safeScale = std::max(.5f, rasterizationScale);
+
             m_impl->desiredHostScreenRect = screenRect;
-            m_impl->desiredRasterizationScale =
-                std::max(.5f, rasterizationScale);
+            m_impl->desiredRasterizationScale = safeScale;
+
+            // CompositionDrawingSurface is resized in physical pixels while the
+            // XAML child visual is measured in DIPs. With Stretch=None, map the
+            // brush back into DIP space explicitly so DWM lands every source
+            // pixel on its corresponding final device pixel instead of scaling
+            // the surface through an intermediate representation.
+            if (m_impl->surfaceBrush)
+            {
+                float inverseScale = 1.0f / safeScale;
+                m_impl->surfaceBrush.Scale({ inverseScale, inverseScale });
+                m_impl->surfaceBrush.SnapToPixels(true);
+            }
         }
 
         m_impl->boundsRevision.fetch_add(1);
