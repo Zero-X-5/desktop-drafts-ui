@@ -180,13 +180,10 @@ float4 main(float4 sv : SV_Position) : SV_Target
             displacementScale * cssScale;
     }
 
-    float2 uv = CaptureUv(localP + displacement);
-
-    if (uv.x < 0 || uv.x > 1 || uv.y < 0 || uv.y > 1)
-    {
-        return float4(0.035, 0.040, 0.048, 1);
-    }
-
+    // The sampler itself is CLAMP_TO_EDGE. Explicitly clamp the capture UV so
+    // displacement/window movement near a monitor edge reuses the nearest real
+    // desktop pixel instead of injecting a dark sentinel frame into the lens.
+    float2 uv = saturate(CaptureUv(localP + displacement));
     return float4(liveDesktopTex.Sample(linearClamp, uv).rgb, 1);
 }
 )";
