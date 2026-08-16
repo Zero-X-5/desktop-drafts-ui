@@ -2,7 +2,7 @@
 
 - 更新日期: 2026-08-16
 - 更新 Agent: ChatGPT
-- 对应代码 HEAD: `7a69da81`（dual-sample test window 当前真实 HEAD；本提交仅同步状态元数据）
+- 对应代码 HEAD: `2d5acd74`（anti-flicker presentation/capture-edge 修复完成；后续文档提交仅同步交接状态）
 
 ## 当前分支
 
@@ -10,29 +10,71 @@
 
 ## 当前状态
 
-已从封板 V9 `45bc51a6` 重新开干净分支，放弃此前 `agent/shijian-native-rebuild` 上的复杂诊断壳、F3/F4、frost mix 和 reference harness 迭代。
+本分支从封板 V9 `45bc51a6` 创建，只保留一个普通原生测试窗口，同时显示两个实时 Liquid Glass 样本：
 
-当前只保留一个简单原生 Windows 测试窗口，用于同时观察两个实时 Liquid Glass 样本。
+1. **V9 Reference**：274×148 host，中心 186×60 `Generate + Zap`；
+2. **Long Bar**：336×124 host，中心 248×36 长条。
 
-## 窗口范围
+窗口使用普通 Windows 系统标题栏拖动；不包含 F3/F4、frost mix、9-slice、Tauri/WebView 或产品 UI。
 
-- 普通 Windows 系统标题栏，直接拖动标题栏移动窗口。
-- 不做自绘透明顶栏，不做 Region 裁剪，不做产品 UI。
-- 内容区只放两个样本：
-  1. **V9 Reference**：274×148 host，中心 186×60 `Generate + Zap`。
-  2. **Long Bar**：336×124 host，中心 248×36 长条。
-- 两个样本同时使用实时桌面 WGC 背景，便于同一时间、同一桌面直接比较。
+## 最新问题：运行/移动时黑闪
 
-## Renderer 变化
+用户真机反馈窗口运行后存在明显闪烁和黑色闪帧。已按 Microsoft 官方文档/官方仓库公开 issue 检查 Composition、D3D texture addressing、WGC 和 WinUI 3 move/resize rendering。
 
-没有复制第二套 renderer，也没有新增材质算法。`LiquidGlassRenderer` 只增加一个很小的 `GlassProfileId` 输入：
+本轮只修确定性的 presentation/capture-edge 问题，不改变 Liquid Glass 光学配方。
 
-- `Reference`
-- `LongBar`
+### 修复 1 — Composition surface 取消 Fill 二次缩放
 
-两个实例复用同一 V9 WGC / D3D11 / D2D / Composition / HLSL / recovery 实现。
+`CompositionDrawingSurface` 实际按物理像素 resize，而 XAML child visual 使用 DIP。旧 V9 bridge 使用：
 
-### Reference profile
+```text
+CompositionSurfaceBrush Stretch = Fill
+```
+
+当前改为：
+
+```text
+Stretch = None
+HorizontalAlignmentRatio = 0
+VerticalAlignmentRatio = 0
+SnapToPixels = true
+BitmapInterpolationMode = NearestNeighbor
+brush.Scale = 1 / rasterizationScale
+```
+
+这沿用此前 Native RAW 真机已经验证过的 physical-pixel 映射方案，避免物理 surface 先被 Fill 缩放到 DIP，再由 DWM 输出到设备像素。
+
+### 修复 2 — capture 越界不再注入深黑 sentinel
+
+Scene shader 原本在 displacement 后 UV 稍微越出 monitor 时直接返回：
+
+```text
+float4(0.035, 0.040, 0.048, 1)
+```
+
+但 D3D sampler 本身已是 `D3D11_TEXTURE_ADDRESS_CLAMP`。当前改为显式：
+
+```text
+uv = saturate(CaptureUv(...))
+```
+
+然后继续采样真实 desktop edge pixel。窗口移动、靠显示器边缘或折射把采样点推出 [0,1] 时，不再人为制造一帧深黑区域。
+
+## 保持不变
+
+- V9 WGC `part04` capture lifecycle / FrameArrived / Closed；
+- captureGate / display-affinity fail-closed API；
+- V9 bounded 3-attempt recovery；
+- device-removal `thread=DEAD` 边界；
+- displacement / Gaussian / saturation / brightness / white veil / radial / inset / rim 公式；
+- Reference / Long Bar profile 参数；
+- 普通系统标题栏与双 sample UI。
+
+未加入 `MinUpdateInterval`：Windows 11 24H2 确有 WGC update-cadence 相关公开问题，但该 API 主要针对捕获更新节奏，不是当前黑色 sentinel / Composition 二次缩放的确定性根因，而且会增加 SDK 版本依赖。
+
+## Profile
+
+### Reference
 
 ```text
 lens            186×60
@@ -44,9 +86,7 @@ Gaussian sigma  2 CSS px
 margin          44px
 ```
 
-该 profile 保持 V9 成功实验的光学参数和 `Generate + Zap` 交互样本。
-
-### Long Bar profile
+### Long Bar
 
 ```text
 lens            248×36
@@ -58,53 +98,28 @@ Gaussian sigma  1.2 CSS px
 margin          44px
 ```
 
-Long Bar 只改变几何、displacement map 尺寸与空间光学 scale；V9 shader 配方不新增/替换算法。
-
-## 配置
-
-profile 参数位于：
-
-`experiments/liquid-glass-winui3-v8-validation/glass-test-window.ini`
-
-源码数值仅作为配置缺失时 fallback。
-
-## V9 稳定性边界
-
-保持：
-
-- WGC monitor capture；
-- D3D11 / D2D / Microsoft.UI.Composition；
-- render thread；
-- captureGate / display-affinity fail-closed API；
-- GraphicsCaptureItem.Closed / ContentSize / drain / WM_DISPLAYCHANGE recovery；
-- bounded 3-attempt recovery；
-- device removal 显式 `thread=DEAD` 边界。
-
-`LiquidGlassRenderer.part04.inc` 未修改；V9 capture session 主路径保持封板代码。`SetScreenshotMode` API 也仍保留。
-
-当前双 renderer 测试窗口**不绑定 F2**：两个独立 renderer 共用一个顶层 HWND 时，若要重新开放 screenshot mode，需要先做共享 affinity/freeze coordinator。当前任务不需要该功能，因此不为测试窗口新增协调层。
-
-## 明确不做
-
-- 不做 F3/F4。
-- 不做 frostAmount 调节。
-- 不做 9-slice。
-- 不改 radial / inset / rim / white veil。
-- 不接入 Tauri/WebView/拾笺业务。
-- 不继续之前的复杂诊断界面。
+配置：`experiments/liquid-glass-winui3-v8-validation/glass-test-window.ini`。
 
 ## 验证
 
-新增 `verify_test_window.py`，会先链式执行 V7→V8→V9 静态契约，再检查：
+`verify_test_window.py` 现在额外锁定：
 
-- 普通系统标题栏未被移除；
-- 274×148 / 186×60 V9 样本存在；
-- 336×124 / 248×36 Long Bar 存在；
-- 两个 renderer profile 实例；
-- profile 外置配置；
-- V9 shader 配方仍在；
-- 无 F3/F4/frost mix；
-- 两个 renderer 都处理 `WM_DISPLAYCHANGE` refresh；
-- 两种样本都保持 44px optical margin。
+- 禁止恢复 `Stretch=Fill`；
+- 必须使用 no-stretch / pixel snap / nearest-neighbor / reciprocal-DPI mapping；
+- Scene capture UV 必须 clamp；
+- 禁止恢复深黑 out-of-bounds sentinel；
+- Reference / Long Bar 在 100/125/150/200% DPI 下物理像素 round-trip 保持 1:1。
 
-当前环境不是 Windows/WinUI 3 build host，因此**未声明 Windows 编译或视觉 PASS**。下一步只需在 Windows 上运行静态脚本、构建并启动窗口，确认两个样本同时显示且可通过系统标题栏拖动窗口。
+沙盒数学契约已通过：两种 host 的 optical margin 均为 44px，常见 DPI 下 reciprocal mapping 不改变最终物理像素计数。
+
+当前环境不是 Windows/WinUI 3 build host，因此**未声明 Windows 编译或视觉 PASS**。
+
+## Windows 下一步
+
+重新构建并重点观察：
+
+1. 窗口静止 30 秒是否还有周期性黑闪；
+2. 拖动系统标题栏移动窗口时是否还有黑块闪入玻璃；
+3. 把窗口移到显示器四边，观察 edge clamp；
+4. 在 100% 和非 100% DPI 各测一次；
+5. 若静止完全稳定、只有拖动/resize 仍有轻微空白或不同步，再单独处理 WinUI 3 / DWM move-resize 同步层，不再改 shader。
