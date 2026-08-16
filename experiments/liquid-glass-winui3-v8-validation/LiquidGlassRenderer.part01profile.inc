@@ -72,6 +72,19 @@
                 : candidates.front();
         }
 
+        int ReadProfileInt(
+            wchar_t const* section,
+            wchar_t const* key,
+            int fallback,
+            std::wstring const& path)
+        {
+            return static_cast<int>(GetPrivateProfileIntW(
+                section,
+                key,
+                fallback,
+                path.c_str()));
+        }
+
         GlassProfile LoadGlassProfile(GlassProfileId profileId)
         {
             GlassProfile profile{};
@@ -90,47 +103,47 @@
             auto path = ResolveGlassProfileConfigPath();
 
             profile.mapWidthCss = std::clamp(
-                GetPrivateProfileIntW(
+                ReadProfileInt(
                     section,
                     L"map_width",
                     profile.mapWidthCss,
-                    path.c_str()),
+                    path),
                 1,
                 2048);
 
             profile.mapHeightCss = std::clamp(
-                GetPrivateProfileIntW(
+                ReadProfileInt(
                     section,
                     L"map_height",
                     profile.mapHeightCss,
-                    path.c_str()),
+                    path),
                 1,
                 2048);
 
             profile.lensWidthCss = static_cast<float>(std::clamp(
-                GetPrivateProfileIntW(
+                ReadProfileInt(
                     section,
                     L"lens_width",
                     static_cast<int>(std::lround(profile.lensWidthCss)),
-                    path.c_str()),
+                    path),
                 1,
                 2048));
 
             profile.lensHeightCss = static_cast<float>(std::clamp(
-                GetPrivateProfileIntW(
+                ReadProfileInt(
                     section,
                     L"lens_height",
                     static_cast<int>(std::lround(profile.lensHeightCss)),
-                    path.c_str()),
+                    path),
                 1,
                 2048));
 
             int opticalScalePercent = std::clamp(
-                GetPrivateProfileIntW(
+                ReadProfileInt(
                     section,
                     L"optical_scale_percent",
                     static_cast<int>(std::lround(profile.opticalScale * 100.0f)),
-                    path.c_str()),
+                    path),
                 10,
                 400);
 
