@@ -2,7 +2,7 @@
 
 - 更新日期: 2026-08-16
 - 更新 Agent: ChatGPT
-- 对应代码 HEAD: `5b00856e`（dual-sample test window 代码完成；本 STATUS/CODEMAP 提交仅同步交接状态）
+- 对应代码 HEAD: `7a69da81`（dual-sample test window 当前真实 HEAD；本提交仅同步状态元数据）
 
 ## 当前分支
 
