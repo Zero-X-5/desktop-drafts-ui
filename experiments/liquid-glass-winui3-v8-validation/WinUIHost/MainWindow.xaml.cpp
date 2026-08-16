@@ -124,7 +124,7 @@ namespace winrt::LiquidGlassWinUI::implementation
             static_cast<float>(GetDpiForWindow(m_hwnd)) / 96.0f;
 
         auto screenRectFor =
-            [&](FrameworkElement const& host)
+            [&](auto const& host)
             {
                 auto transform = host.TransformToVisual(root);
                 auto topLeftDip = transform.TransformPoint({ 0, 0 });
