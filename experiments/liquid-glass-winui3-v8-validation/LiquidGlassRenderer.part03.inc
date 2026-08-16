@@ -110,19 +110,22 @@
 
         void CreateDisplacementMap()
         {
+            int mapWidthCss = std::max(1, profile.mapWidthCss);
+            int mapHeightCss = std::max(1, profile.mapHeightCss);
+
             std::vector<uint8_t> rgba(
                 static_cast<size_t>(
-                    kMapWidthCss * kMapHeightCss * 4));
+                    mapWidthCss * mapHeightCss * 4));
 
-            for (int y = 0; y < kMapHeightCss; ++y)
+            for (int y = 0; y < mapHeightCss; ++y)
             {
-                for (int x = 0; x < kMapWidthCss; ++x)
+                for (int x = 0; x < mapWidthCss; ++x)
                 {
                     float nx =
-                        (static_cast<float>(x) / kMapWidthCss) * 2.0f - 1.0f;
+                        (static_cast<float>(x) / mapWidthCss) * 2.0f - 1.0f;
 
                     float ny =
-                        (static_cast<float>(y) / kMapHeightCss) * 2.0f - 1.0f;
+                        (static_cast<float>(y) / mapHeightCss) * 2.0f - 1.0f;
 
                     float d =
                         std::pow(std::abs(nx), 3.5f) +
@@ -151,7 +154,7 @@
 
                     size_t i =
                         static_cast<size_t>(
-                            (y * kMapWidthCss + x) * 4);
+                            (y * mapWidthCss + x) * 4);
 
                     rgba[i + 0] = static_cast<uint8_t>(r);
                     rgba[i + 1] = static_cast<uint8_t>(g);
@@ -161,8 +164,8 @@
             }
 
             D3D11_TEXTURE2D_DESC desc{};
-            desc.Width = kMapWidthCss;
-            desc.Height = kMapHeightCss;
+            desc.Width = static_cast<UINT>(mapWidthCss);
+            desc.Height = static_cast<UINT>(mapHeightCss);
             desc.MipLevels = 1;
             desc.ArraySize = 1;
             desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -172,7 +175,7 @@
 
             D3D11_SUBRESOURCE_DATA init{};
             init.pSysMem = rgba.data();
-            init.SysMemPitch = kMapWidthCss * 4;
+            init.SysMemPitch = mapWidthCss * 4;
 
             ComPtr<ID3D11Texture2D> texture;
 

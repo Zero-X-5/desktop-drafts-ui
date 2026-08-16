@@ -88,16 +88,18 @@
             float sumMag{};
 
             constexpr int step = 2;
+            int mapWidthCss = std::max(1, profile.mapWidthCss);
+            int mapHeightCss = std::max(1, profile.mapHeightCss);
 
-            for (int y = 0; y < kMapHeightCss; y += step)
+            for (int y = 0; y < mapHeightCss; y += step)
             {
-                for (int x = 0; x < kMapWidthCss; x += step)
+                for (int x = 0; x < mapWidthCss; x += step)
                 {
                     float nx =
-                        (static_cast<float>(x) / kMapWidthCss) * 2.0f - 1.0f;
+                        (static_cast<float>(x) / mapWidthCss) * 2.0f - 1.0f;
 
                     float ny =
-                        (static_cast<float>(y) / kMapHeightCss) * 2.0f - 1.0f;
+                        (static_cast<float>(y) / mapHeightCss) * 2.0f - 1.0f;
 
                     float d =
                         std::pow(std::abs(nx), 3.5f) +
@@ -184,7 +186,7 @@
                 std::max(
                     1.0f,
                     static_cast<float>(
-                        kMapWidthCss * kMapHeightCss) /
+                        mapWidthCss * mapHeightCss) /
                     (step * step));
 
             result.magnitude =

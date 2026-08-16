@@ -41,6 +41,7 @@
     {
         HWND window{};
         MUX::UIElement compositionHost{ nullptr };
+        GlassProfile profile{};
 
         HANDLE stateEvent{};
         HANDLE captureEvent{};

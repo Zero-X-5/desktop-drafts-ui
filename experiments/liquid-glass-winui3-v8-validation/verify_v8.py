@@ -5,9 +5,12 @@ header = (root / "LiquidGlassRenderer.h").read_text(encoding="utf-8")
 parts = sorted(root.glob("LiquidGlassRenderer.part*.inc"))
 cpp = "".join(p.read_text(encoding="utf-8") for p in parts) if parts else (root / "LiquidGlassRenderer.cpp").read_text(encoding="utf-8")
 host = (root / "WinUIHost" / "MainWindow.xaml.cpp").read_text(encoding="utf-8")
+xaml = (root / "WinUIHost" / "MainWindow.xaml").read_text(encoding="utf-8")
 
 # Preserve V7 optical/product architecture.
 exec((root / "verify_v7.py").read_text(encoding="utf-8"), {"__file__": str(root / "verify_v7.py")})
+
+dual_test_window = 'x:Name="LongBarSurfaceHost"' in xaml
 
 checks = {
     "strict F2 capture gate": all(x in cpp for x in [
@@ -20,7 +23,7 @@ checks = {
         "captureFrozen.store(true)",
         "bool LiquidGlassRenderer::SetScreenshotMode",
     ]),
-    "F2 autorepeat filter": "(lParam & (1LL << 30)) == 0" in host,
+    "F2 host binding or deliberate dual-renderer disable": dual_test_window or "(lParam & (1LL << 30)) == 0" in host,
     "capture drop/age metrics": all(x in cpp for x in [
         "droppedCaptureFrames",
         "lastCaptureFrameTickNs",

@@ -325,13 +325,15 @@
 
     void LiquidGlassRenderer::Attach(
         MUX::UIElement const& compositionHost,
-        HWND window)
+        HWND window,
+        GlassProfileId profileId)
     {
         Detach();
 
         auto impl = std::make_unique<Impl>();
         impl->window = window;
         impl->compositionHost = compositionHost;
+        impl->profile = LoadGlassProfile(profileId);
 
         impl->CreateDevices();
         impl->CreateCompositionBridge();

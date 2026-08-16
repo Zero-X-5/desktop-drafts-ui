@@ -4,12 +4,14 @@
             d3dContext->PSSetSamplers(0, 1, sampler.GetAddressOf());
 
             float cssScale = rasterizationScale;
+            float opticalCssScale =
+                cssScale * std::max(.10f, profile.opticalScale);
 
             float buttonWidth =
-                kButtonWidthCss * cssScale;
+                profile.lensWidthCss * cssScale;
 
             float buttonHeight =
-                kButtonHeightCss * cssScale;
+                profile.lensHeightCss * cssScale;
 
             float pressedScale =
                 pressed.load() ? .96f : 1.0f;
@@ -26,7 +28,9 @@
             float buttonHalfH =
                 buttonHeight * pressedScale * .5f;
 
-            // Pass 1: live desktop + exact reference displacement.
+            // Pass 1: live desktop + reference displacement field. The selected
+            // profile only changes lens geometry/map dimensions and the spatial
+            // optical scale; the V9 shader recipe itself stays unchanged.
             SceneParams sceneParams{};
 
             sceneParams.surfaceScreenOrigin[0] =
@@ -51,7 +55,7 @@
             sceneParams.buttonCenter[1] = buttonCenterY;
             sceneParams.buttonHalfSize[0] = buttonHalfW;
             sceneParams.buttonHalfSize[1] = buttonHalfH;
-            sceneParams.cssScale = cssScale;
+            sceneParams.cssScale = opticalCssScale;
             sceneParams.displacementScale = kSvgDispScale;
 
             d3dContext->UpdateSubresource(
@@ -93,7 +97,8 @@
             ID3D11ShaderResourceView* null2[]{ nullptr, nullptr };
             d3dContext->PSSetShaderResources(0, 2, null2);
 
-            // Pass 2/3: validated two-pass 25-tap Gaussian.
+            // Pass 2/3: validated two-pass 25-tap Gaussian. Reference profile
+            // stays sigma=2 CSS px; the 36px long bar uses 0.60x spatial optics.
             BlurParams blur{};
 
             blur.texelSize[0] =
@@ -104,7 +109,7 @@
 
             blur.direction[0] = 1;
             blur.direction[1] = 0;
-            blur.sigma = 2.0f * cssScale;
+            blur.sigma = 2.0f * opticalCssScale;
 
             d3dContext->UpdateSubresource(
                 blurParamsBuffer.Get(),
@@ -186,7 +191,7 @@
             composite.cosSin[1] = sinVal;
             composite.rimIntensity = rimIntensity;
             composite.rimFromRad = rimFromRad;
-            composite.cssScale = cssScale;
+            composite.cssScale = opticalCssScale;
             composite.pressedScale = pressedScale;
 
             for (int i = 0; i < kBins; ++i)

@@ -28,6 +28,12 @@
 
 namespace Shijian::LiquidGlass
 {
+    enum class GlassProfileId : uint32_t
+    {
+        Reference = 0,
+        LongBar = 1,
+    };
+
     struct RendererStats
     {
         double renderFps{};
@@ -73,12 +79,13 @@ namespace Shijian::LiquidGlass
 
         void Attach(
             winrt::Microsoft::UI::Xaml::UIElement const& compositionHost,
-            HWND window);
+            HWND window,
+            GlassProfileId profileId = GlassProfileId::Reference);
 
         void Detach();
 
         // screenRect is in physical screen pixels and includes the optical
-        // shadow margin (the reference host is 274x148 DIPs).
+        // shadow margin around the selected profile.
         void SetHostScreenRect(RECT const& screenRect, float rasterizationScale);
 
         // Force the current monitor capture session to be recreated even when
@@ -88,12 +95,9 @@ namespace Shijian::LiquidGlass
 
         void SetPressed(bool pressed);
 
-        // F2 workflow:
-        // true  -> freeze last good WGC texture, then allow system screenshots.
-        // false -> restore capture exclusion, then resume live WGC.
-        // Returns false when the requested display-affinity transition fails.
-        // Failure is fail-safe: live capture remains frozen whenever self-exclusion
-        // cannot be guaranteed.
+        // F2 workflow retained from sealed V9. The dual-sample test window does
+        // not bind F2 because two independent renderers would require a shared
+        // top-level affinity coordinator; the renderer API itself is unchanged.
         bool SetScreenshotMode(bool enabled);
 
         [[nodiscard]] RendererStats Stats() const;

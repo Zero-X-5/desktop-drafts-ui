@@ -46,18 +46,15 @@ namespace winrt::LiquidGlassWinUI::implementation
             winrt::Windows::Foundation::IInspectable const&,
             winrt::Windows::Foundation::IInspectable const&);
 
+        void ConfigureTestWindow();
         void UpdateGlassScreenRect();
-        void ToggleDebug();
-        void ToggleScreenshotMode();
-        void RefreshDebugText();
 
         HWND m_hwnd{};
         Shijian::LiquidGlass::LiquidGlassRenderer m_renderer;
+        Shijian::LiquidGlass::LiquidGlassRenderer m_longBarRenderer;
 
-        winrt::Microsoft::UI::Dispatching::DispatcherQueueTimer m_statsTimer{ nullptr };
-        bool m_debugVisible{};
-        bool m_screenshotMode{};
         RECT m_lastGlassRect{};
+        RECT m_lastLongBarRect{};
         float m_lastScale{};
     };
 }
