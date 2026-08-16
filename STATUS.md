@@ -2,40 +2,109 @@
 
 - 更新日期: 2026-08-16
 - 更新 Agent: ChatGPT
-- 对应代码 HEAD: `45bc51a6`（V9 recovery 封板基线；本提交仅重置分支与范围）
+- 对应代码 HEAD: `5b00856e`（dual-sample test window 代码完成；本 STATUS/CODEMAP 提交仅同步交接状态）
 
 ## 当前分支
 
 `agent/liquid-glass-test-window`
 
-## 基线
+## 当前状态
 
-本分支从 `agent/liquid-glass-v9-recovery` 当前 HEAD `45bc51a6` 创建。V9 renderer 的 WGC / D3D11 / D2D / Microsoft.UI.Composition、F2 captureGate、display-affinity fail-closed、capture-session recovery、device-removal 诊断均保持封板状态。
+已从封板 V9 `45bc51a6` 重新开干净分支，放弃此前 `agent/shijian-native-rebuild` 上的复杂诊断壳、F3/F4、frost mix 和 reference harness 迭代。
 
-## 当前唯一目标
+当前只保留一个简单原生 Windows 测试窗口，用于同时观察两个实时 Liquid Glass 样本。
 
-做一个简单的原生 Windows 测试窗口，只包含：
+## 窗口范围
 
-1. 可拖动的普通窗口顶栏；
-2. V9 已验证原版样本：274×148 host，中心 186×60 `Generate + Zap`；
-3. 一个 248×36 长条样本，用同一 V9 renderer 配方，仅通过小型 profile 改几何/光学尺度；
-4. 两个样本同时实时显示，便于同背景直接比较。
+- 普通 Windows 系统标题栏，直接拖动标题栏移动窗口。
+- 不做自绘透明顶栏，不做 Region 裁剪，不做产品 UI。
+- 内容区只放两个样本：
+  1. **V9 Reference**：274×148 host，中心 186×60 `Generate + Zap`。
+  2. **Long Bar**：336×124 host，中心 248×36 长条。
+- 两个样本同时使用实时桌面 WGC 背景，便于同一时间、同一桌面直接比较。
 
-## 严格范围
+## Renderer 变化
 
-- 不做 F3/F4 诊断 UI。
-- 不做新的 frost mix、9-slice、radial/rim 算法或材质调参。
-- 不改 WGC capture/recovery/F2/device-loss 状态机。
-- 不接入 Tauri/WebView/旧拾笺业务。
-- 不追求产品 UI；测试窗口只要求清楚、稳定、可拖动。
+没有复制第二套 renderer，也没有新增材质算法。`LiquidGlassRenderer` 只增加一个很小的 `GlassProfileId` 输入：
 
-## 实现原则
+- `Reference`
+- `LongBar`
 
-- V9 profile 必须保持原参数：lens 186×60、displacement map 186×60、displacement 35、Gaussian sigma 2、optical scale 1.0。
-- Long Bar profile：lens 248×36、displacement map 248×36、optical scale 0.60；其余 V9 shader 配方不新增算法。
-- 两个 renderer 实例复用同一个 `LiquidGlassRenderer` 类；只新增极小 profile/config 输入，不复制 renderer 源码。
-- profile 参数写入实验配置文件，不只存在源码常量。
+两个实例复用同一 V9 WGC / D3D11 / D2D / Composition / HLSL / recovery 实现。
+
+### Reference profile
+
+```text
+lens            186×60
+host            274×148
+map             186×60
+optical scale   1.00
+DISP_SCALE      35
+Gaussian sigma  2 CSS px
+margin          44px
+```
+
+该 profile 保持 V9 成功实验的光学参数和 `Generate + Zap` 交互样本。
+
+### Long Bar profile
+
+```text
+lens            248×36
+host            336×124
+map             248×36
+optical scale   0.60
+DISP effective  21
+Gaussian sigma  1.2 CSS px
+margin          44px
+```
+
+Long Bar 只改变几何、displacement map 尺寸与空间光学 scale；V9 shader 配方不新增/替换算法。
+
+## 配置
+
+profile 参数位于：
+
+`experiments/liquid-glass-winui3-v8-validation/glass-test-window.ini`
+
+源码数值仅作为配置缺失时 fallback。
+
+## V9 稳定性边界
+
+保持：
+
+- WGC monitor capture；
+- D3D11 / D2D / Microsoft.UI.Composition；
+- render thread；
+- captureGate / display-affinity fail-closed API；
+- GraphicsCaptureItem.Closed / ContentSize / drain / WM_DISPLAYCHANGE recovery；
+- bounded 3-attempt recovery；
+- device removal 显式 `thread=DEAD` 边界。
+
+`LiquidGlassRenderer.part04.inc` 未修改；V9 capture session 主路径保持封板代码。`SetScreenshotMode` API 也仍保留。
+
+当前双 renderer 测试窗口**不绑定 F2**：两个独立 renderer 共用一个顶层 HWND 时，若要重新开放 screenshot mode，需要先做共享 affinity/freeze coordinator。当前任务不需要该功能，因此不为测试窗口新增协调层。
+
+## 明确不做
+
+- 不做 F3/F4。
+- 不做 frostAmount 调节。
+- 不做 9-slice。
+- 不改 radial / inset / rim / white veil。
+- 不接入 Tauri/WebView/拾笺业务。
+- 不继续之前的复杂诊断界面。
 
 ## 验证
 
-当前环境不是 Windows/WinUI 3 build host。完成代码后执行静态 V7→V8→V9 回归与新 test-window contract；最终编译/视觉验证仍需 Windows 真机。
+新增 `verify_test_window.py`，会先链式执行 V7→V8→V9 静态契约，再检查：
+
+- 普通系统标题栏未被移除；
+- 274×148 / 186×60 V9 样本存在；
+- 336×124 / 248×36 Long Bar 存在；
+- 两个 renderer profile 实例；
+- profile 外置配置；
+- V9 shader 配方仍在；
+- 无 F3/F4/frost mix；
+- 两个 renderer 都处理 `WM_DISPLAYCHANGE` refresh；
+- 两种样本都保持 44px optical margin。
+
+当前环境不是 Windows/WinUI 3 build host，因此**未声明 Windows 编译或视觉 PASS**。下一步只需在 Windows 上运行静态脚本、构建并启动窗口，确认两个样本同时显示且可通过系统标题栏拖动窗口。
