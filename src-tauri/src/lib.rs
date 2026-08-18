@@ -64,7 +64,7 @@ fn settings_path(app: &tauri::AppHandle) -> PathBuf {
 }
 
 fn load_settings(app: &tauri::AppHandle) -> Settings {
-    let mut settings = std::fs::read_to_string(settings_path(app))
+    let mut settings: Settings = std::fs::read_to_string(settings_path(app))
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
         .unwrap_or_default();
