@@ -20,21 +20,6 @@ The current version is built with **Tauri 2 + Rust + Vanilla JavaScript/CSS** an
 - **Multi-DPI / multi-monitor handling** — window clipping and coordinates are optimized for Windows.
 - **No frontend framework** — the UI is plain HTML, CSS and JavaScript.
 
-## Screenshots
-
-<table>
-<tr>
-<td><img src="./docs/images/shijian-light.webp" alt="Shijian light-mode app screenshot" width="100%"></td>
-<td><img src="./docs/images/shijian-dark.webp" alt="Shijian dark-mode app screenshot" width="100%"></td>
-</tr>
-<tr>
-<td align="center">Light mode</td>
-<td align="center">Dark mode</td>
-</tr>
-</table>
-
-> Screenshots are captured from the actual Windows application.
-
 ## Installation
 
 ### Download a release
@@ -94,7 +79,6 @@ See [PRIVACY.md](./PRIVACY.md) for details.
 .
 ├── src/                  # frontend HTML / CSS / JavaScript
 ├── src-tauri/            # Rust / Tauri backend
-├── docs/images/          # project showcase images
 ├── AGENTS.md             # development protocol
 ├── CODEMAP.md            # code map
 ├── DESIGN.md             # UI design rules

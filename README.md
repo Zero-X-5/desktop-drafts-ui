@@ -20,21 +20,6 @@
 - **多 DPI / 双显示器适配**：窗口裁剪与坐标处理针对 Windows 做了专门适配。
 - **无前端框架**：前端直接由 HTML、CSS 和 JavaScript 驱动，结构简单。
 
-## 截图
-
-<table>
-<tr>
-<td><img src="./docs/images/shijian-light.webp" alt="拾笺浅色模式实际运行截图" width="100%"></td>
-<td><img src="./docs/images/shijian-dark.webp" alt="拾笺深色模式实际运行截图" width="100%"></td>
-</tr>
-<tr>
-<td align="center">浅色模式</td>
-<td align="center">深色模式</td>
-</tr>
-</table>
-
-> 图片来自实际 Windows 运行界面。
-
 ## 安装
 
 ### 下载发行版
@@ -94,7 +79,6 @@ npm run tauri dev
 .
 ├── src/                  # 前端 HTML / CSS / JavaScript
 ├── src-tauri/            # Rust / Tauri 后端
-├── docs/images/          # 项目展示图片
 ├── AGENTS.md             # 项目开发协议
 ├── CODEMAP.md            # 代码地图
 ├── DESIGN.md             # UI 设计规范
