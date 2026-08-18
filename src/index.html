@@ -16,7 +16,7 @@
         <span class="info-mark" aria-hidden="true">i</span>
         <div class="title-copy">
           <strong id="title">Glass Transparency Lab</strong>
-          <span>Tauri 2 · clear / CSS / Acrylic / Blur</span>
+          <span>Tauri 2 · clear / CSS / Acrylic / Blur / split</span>
         </div>
       </div>
       <button id="closeButton" class="window-button" type="button" aria-label="关闭">×</button>
@@ -88,11 +88,19 @@
         <strong>Blur α0</strong>
         <span>8 · system</span>
       </button>
+      <button class="mode-button reference-mode" data-mode="split-acrylic" type="button">
+        <strong>Split Acrylic</strong>
+        <span>9 · left clear / right frost</span>
+      </button>
+      <button class="mode-button reference-mode" data-mode="split-clear" type="button">
+        <strong>Split Clear</strong>
+        <span>0 · CSS split only</span>
+      </button>
     </section>
 
     <footer>
-      <span>把窗口放在文字/图标上拖动，比较“清晰度、模糊、染色、闪烁”。</span>
-      <span>1–8 快捷切换</span>
+      <span>重点比较 9 / 0：同一套左右分区 CSS，只差底层有没有系统 Acrylic。</span>
+      <span>0–9 快捷切换</span>
     </footer>
   </main>
 
