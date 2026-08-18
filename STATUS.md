@@ -2,41 +2,100 @@
 
 - 更新日期: 2026-08-18
 - 更新 Agent: ChatGPT
-- 对应基线 HEAD: `b442e56d`（从 main 新开独立实验分支；本提交仅建立测试范围 checkpoint）
+- 对应代码 HEAD: `073a164e`（Acrylic / Blur / Transparent 三态测试窗口已实现；本提交仅同步交接状态）
 
 ## 当前分支
 
 `agent/tauri-glass-effects-test`
 
-## 当前目标
+## 当前状态
 
-建立一个最小 Tauri 2 Windows 玻璃效果测试窗口，只比较三种系统/窗口效果：
+已从 `main@b442e56d` 新开独立实验分支，完成一个最小 Tauri 2 Windows 玻璃效果测试窗口。
+
+该分支只用于比较：
 
 1. Acrylic
 2. Blur
-3. 普通透明（clearEffects）
+3. 普通透明（`clearEffects()`）
 
-本分支不承载拾笺草稿业务验证，也不接入此前 WGC / D3D11 Liquid Glass renderer。
+不接入此前 WGC / D3D11 Liquid Glass renderer，也不运行拾笺产品的 Region / 托盘 / 全局快捷键 / 草稿 watcher。
 
-## 范围
+## 当前窗口
 
-- 保持 Tauri 2 + 单窗口 + 单 WebView。
-- 透明、无装饰、不可调整大小的测试窗口。
-- 自定义顶部拖动区域用于移动窗口。
-- 三个模式按钮运行时调用 Tauri window effect API。
-- 普通透明模式调用 `clearEffects()`，用于与 Acrylic / Blur 做直接对照。
-- 页面显示当前模式、调用成功/失败状态和 Windows 兼容提示。
-- 不使用主线固定 720×480 + SetWindowRgn 状态机；该结构仅在 main 产品分支继续保留。
+- 520×360 logical px
+- 单窗口、单 WebView
+- `transparent: true`
+- `decorations: false`
+- `resizable: false`
+- `shadow: false`
+- `backgroundColor: #00000000`
+- `noRedirectionBitmap: true`
+- 顶部自定义 `data-tauri-drag-region` 可直接拖动窗口
+
+## 三态切换
+
+前端使用仓库已有的 `app.withGlobalTauri: true`，直接从 `window.__TAURI__.window` 获取当前窗口。
+
+- Acrylic：`setEffects({ effects: ['acrylic'], color })`
+- Blur：`setEffects({ effects: ['blur'], color })`
+- Transparent：`clearEffects()`
+
+三种模式可点击按钮切换，也可使用：
+
+- `1` Acrylic
+- `2` Blur
+- `3` Transparent
+
+当前初始模式为 Acrylic。
+
+## 参数
+
+`src/glass-test-config.json` 保存：
+
+- 初始模式
+- Acrylic / Blur 共用 tint `[24, 26, 32, 92]`
+- 快捷键映射
+- 模式说明
+
+## 权限
+
+`src-tauri/capabilities/default.json` 只为该测试保留必要 window 权限：
+
+- `core:window:allow-set-effects`
+- `core:window:allow-start-dragging`
+- `core:window:allow-close`
 
 ## 官方 API 依据
 
-Tauri 2 `Window.setEffects()` / `Window.clearEffects()` 用于运行时设置和清除窗口效果；`Acrylic` 支持 Windows 10/11，`Blur` 支持 Windows 7/10/部分 Windows 11。窗口 effect 要求透明窗口。
+Tauri 2 当前提供 `Window.setEffects()` 与 `Window.clearEffects()`；Acrylic 支持 Windows 10/11，Blur 支持 Windows 7/10/部分 Windows 11。窗口 effect 要求透明窗口。Tauri 官方同时提示 Acrylic 在部分 Win10/Win11 版本拖动/resize 性能可能较差，因此本窗口就是用来做真机对照。
 
-本实验使用仓库已有 `app.withGlobalTauri: true`，前端直接通过 `window.__TAURI__.window.getCurrentWindow()` 调用，无需新增前端 bundler。
+`noRedirectionBitmap` 按 Tauri 官方说明启用，用于降低透明窗口创建时出现白闪的概率。
 
-## 验证计划
+## 验证
 
-- 静态检查三态按钮和 API 调用存在。
-- 静态检查 capability 包含 `core:window:allow-set-effects`。
-- 静态检查透明窗口配置且没有产品 Region 启动裁剪。
-- 当前执行环境不是 Windows Tauri build host，因此最终拖动性能和 Acrylic/Blur 视觉效果必须在 Windows 真机确认。
+已完成：
+
+- GitHub readback：三态 JS API 调用已落库。
+- GitHub readback：520×360 / transparent / noRedirectionBitmap 配置已落库。
+- GitHub readback：`allow-set-effects` capability 已落库。
+- GitHub readback：Rust 启动层已缩成最小 Builder，不再调用 `window_region`。
+- 分支 diff 检查：改动限定在本实验 UI、Tauri window config/capability、最小启动层、CODEMAP/STATUS 与静态验证脚本。
+
+新增 `verify_tauri_glass_test.py`，Windows 本机建议执行：
+
+```powershell
+python verify_tauri_glass_test.py
+cargo check --manifest-path src-tauri/Cargo.toml
+npm run tauri build
+```
+
+当前 ChatGPT 环境不是 Windows Tauri build host，因此没有声明 Windows 编译或 Acrylic/Blur 真机视觉 PASS。
+
+## Windows 真机观察重点
+
+固定同一桌面背景，分别切到 1 / 2 / 3，重点观察：
+
+- 静止时是否稳定、是否闪黑/闪白；
+- 抓住顶部连续拖动 10~20 秒时的流畅度；
+- Acrylic 和 Blur 的背景模糊强度及延迟；
+- Transparent 作为无系统 blur 的性能基准。
