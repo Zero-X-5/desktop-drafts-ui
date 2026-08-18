@@ -1,6 +1,6 @@
 {
   "initialMode": "acrylic",
-  "effectColor": [24, 26, 32, 92],
+  "effectColor": [92, 170, 226, 78],
   "shortcuts": {
     "1": "acrylic",
     "2": "blur",
@@ -10,17 +10,17 @@
     "acrylic": {
       "label": "Acrylic",
       "effect": "acrylic",
-      "description": "Windows Acrylic：系统背景模糊 + tint。重点观察 Win10 拖动时是否掉帧或闪烁。"
+      "description": "系统 Acrylic 负责真实桌面模糊，CSS 只叠蓝白光泽、亮边与内层厚玻璃。"
     },
     "blur": {
       "label": "Blur",
       "effect": "blur",
-      "description": "Windows Blur：更轻的系统背景模糊。与 Acrylic 使用同一 tint 参数便于直接比较。"
+      "description": "更轻的系统 Blur，保留同一套蓝白玻璃 UI，用来比较拖动流畅度与背景响应。"
     },
     "transparent": {
       "label": "Transparent",
       "effect": null,
-      "description": "普通透明：调用 clearEffects()，只保留 WebView 自身的半透明 CSS，不使用系统背景模糊。"
+      "description": "清除系统 backdrop，只剩半透明 CSS 玻璃层，是性能与视觉的无系统模糊基准。"
     }
   }
 }
