@@ -28,6 +28,8 @@ assert 'data-mode="acrylic"' in index
 assert 'data-mode="blur"' in index
 assert 'data-mode="transparent"' in index
 assert "data-tauri-drag-region" in index
+assert "material-card" in index
+assert "glass-sheen-a" in index and "glass-sheen-b" in index
 
 assert "window.__TAURI__?.window" in js
 assert "getCurrentWindow()" in js
@@ -36,15 +38,21 @@ assert "appWindow.clearEffects" in js
 assert "glass-test-config.json" in js
 
 assert config["initialMode"] == "acrylic"
+assert config["effectColor"] == [92, 170, 226, 78]
 assert config["modes"]["acrylic"]["effect"] == "acrylic"
 assert config["modes"]["blur"]["effect"] == "blur"
 assert config["modes"]["transparent"]["effect"] is None
 assert config["shortcuts"] == {"1": "acrylic", "2": "blur", "3": "transparent"}
 
 assert "background: transparent" in css
+assert "--glass-blue" in css
+assert "border-radius: 28px" in css
+assert "backdrop-filter: blur(14px)" in css
+assert "inset 0 1px 0 rgba(255, 255, 255, .94)" in css
 assert "window_region" not in lib
 assert "SetWindowRgn" not in lib
 assert "tauri_plugin" not in lib
 assert "WGC" not in js and "D3D11" not in js
 
 print("Tauri glass effects test static validation: PASS")
+print("Layered blue-white acrylic visual contract: PASS")
