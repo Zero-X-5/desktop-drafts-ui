@@ -16,7 +16,7 @@
         <span class="info-mark" aria-hidden="true">i</span>
         <div class="title-copy">
           <strong id="title">Glass Transparency Lab</strong>
-          <span>Tauri 2 · clear / CSS / Acrylic / Blur / split</span>
+          <span>Tauri 2 · clear / CSS / whole-window / local native plate</span>
         </div>
       </div>
       <button id="closeButton" class="window-button" type="button" aria-label="关闭">×</button>
@@ -45,11 +45,11 @@
           <strong id="apiStatus">等待</strong>
         </div>
         <div class="status-pill">
-          <span>CSS profile</span>
+          <span>CSS / native</span>
           <strong id="cssProfile">—</strong>
         </div>
         <div class="status-pill">
-          <span>Tint α</span>
+          <span>Main tint α</span>
           <strong id="tintAlpha">—</strong>
         </div>
       </div>
@@ -74,32 +74,32 @@
       </button>
       <button class="mode-button" data-mode="acrylic-0" type="button">
         <strong>Acrylic α0</strong>
-        <span>5 · system</span>
+        <span>5 · whole window</span>
       </button>
       <button class="mode-button" data-mode="acrylic-12" type="button">
         <strong>Acrylic α12</strong>
-        <span>6 · system</span>
+        <span>6 · whole window</span>
       </button>
       <button class="mode-button" data-mode="acrylic-78" type="button">
         <strong>Acrylic α78</strong>
-        <span>7 · system</span>
+        <span>7 · whole window</span>
       </button>
       <button class="mode-button" data-mode="blur-0" type="button">
         <strong>Blur α0</strong>
-        <span>8 · system</span>
+        <span>8 · whole window</span>
       </button>
-      <button class="mode-button reference-mode" data-mode="split-acrylic" type="button">
-        <strong>Split Acrylic</strong>
-        <span>9 · left clear / right frost</span>
+      <button class="mode-button reference-mode" data-mode="native-acrylic" type="button">
+        <strong>Native Acrylic Plate</strong>
+        <span>9 · right child HWND</span>
       </button>
-      <button class="mode-button reference-mode" data-mode="split-clear" type="button">
-        <strong>Split Clear</strong>
-        <span>0 · CSS split only</span>
+      <button class="mode-button reference-mode" data-mode="native-blur" type="button">
+        <strong>Native Blur Plate</strong>
+        <span>0 · right child HWND</span>
       </button>
     </section>
 
     <footer>
-      <span>重点比较 9 / 0：同一套左右分区 CSS，只差底层有没有系统 Acrylic。</span>
+      <span>重点比较 1 / 9 / 0：左侧始终 clear，只有右侧 child HWND 使用系统 Acrylic 或 Blur。</span>
       <span>0–9 快捷切换</span>
     </footer>
   </main>
