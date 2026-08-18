@@ -22,7 +22,18 @@
 
 ## 截图
 
-> 正式公开前会补充真实产品截图 / GIF。
+<table>
+<tr>
+<td><img src="./docs/images/shijian-light.jpg" alt="拾笺浅色模式发布预览" width="100%"></td>
+<td><img src="./docs/images/shijian-dark.jpg" alt="拾笺深色模式发布预览" width="100%"></td>
+</tr>
+<tr>
+<td align="center">浅色模式</td>
+<td align="center">深色模式</td>
+</tr>
+</table>
+
+> 当前图片基于项目现有 UI、设计规范和功能在沙盒中渲染，用于开源发布展示；正式发行版请以实际 Windows 构建为准。
 
 ## 安装
 
@@ -83,6 +94,7 @@ npm run tauri dev
 .
 ├── src/                  # 前端 HTML / CSS / JavaScript
 ├── src-tauri/            # Rust / Tauri 后端
+├── docs/images/          # 项目展示图片
 ├── AGENTS.md             # 项目开发协议
 ├── CODEMAP.md            # 代码地图
 ├── DESIGN.md             # UI 设计规范
@@ -112,7 +124,7 @@ npm run tauri dev
 当前优先级：
 
 - [ ] 发布首个可下载的 Windows `v0.1.0`
-- [ ] 补充产品截图 / GIF
+- [x] 补充项目浅色 / 深色发布预览图
 - [ ] 完善搜索与多草稿交互
 - [ ] 增加自动化测试覆盖
 - [ ] 根据真实用户反馈继续打磨交互

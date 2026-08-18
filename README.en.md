@@ -22,7 +22,18 @@ The current version is built with **Tauri 2 + Rust + Vanilla JavaScript/CSS** an
 
 ## Screenshots
 
-> Real product screenshots / GIFs will be added before the first public release.
+<table>
+<tr>
+<td><img src="./docs/images/shijian-light.jpg" alt="Shijian light-mode release preview" width="100%"></td>
+<td><img src="./docs/images/shijian-dark.jpg" alt="Shijian dark-mode release preview" width="100%"></td>
+</tr>
+<tr>
+<td align="center">Light mode</td>
+<td align="center">Dark mode</td>
+</tr>
+</table>
+
+> These images are sandbox-rendered release previews based on the current UI, design rules and feature set. The actual Windows build is the source of truth for the final released interface.
 
 ## Installation
 
@@ -83,6 +94,7 @@ See [PRIVACY.md](./PRIVACY.md) for details.
 .
 ├── src/                  # frontend HTML / CSS / JavaScript
 ├── src-tauri/            # Rust / Tauri backend
+├── docs/images/          # project showcase images
 ├── AGENTS.md             # development protocol
 ├── CODEMAP.md            # code map
 ├── DESIGN.md             # UI design rules
@@ -99,7 +111,7 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before contributing.
 ## Roadmap
 
 - [ ] Publish the first downloadable Windows `v0.1.0`
-- [ ] Add real product screenshots / GIFs
+- [x] Add light / dark release preview images
 - [ ] Improve search and multi-draft interactions
 - [ ] Expand automated test coverage
 - [ ] Iterate based on real user feedback
