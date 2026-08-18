@@ -1,35 +1,71 @@
 {
-  "initialMode": "crystal",
+  "initialMode": "pure",
   "shortcuts": {
-    "1": "crystal",
-    "2": "thin-acrylic",
-    "3": "acrylic",
-    "4": "blur"
+    "1": "pure",
+    "2": "edge",
+    "3": "tint",
+    "4": "frost",
+    "5": "acrylic-0",
+    "6": "acrylic-12",
+    "7": "acrylic-78",
+    "8": "blur-0"
   },
   "modes": {
-    "crystal": {
-      "label": "Crystal",
+    "pure": {
+      "label": "Pure",
       "effect": null,
       "color": null,
-      "description": "Crystal：clearEffects() + 极薄 CSS 高光层。桌面保持清晰透过，不使用系统 blur，也不使用内层 backdrop blur。"
+      "cssProfile": "pure",
+      "description": "Pure：clearEffects() + 几乎完全透明的 WebView 内容面。作为真实透明基准。"
     },
-    "thin-acrylic": {
-      "label": "Thin Acrylic",
+    "edge": {
+      "label": "Edge Glass",
+      "effect": null,
+      "color": null,
+      "cssProfile": "edge",
+      "description": "Edge Glass：仍然 clearEffects()，只增加边缘高光和轻微 sheen，不铺大面积 tint。"
+    },
+    "tint": {
+      "label": "Tint Glass",
+      "effect": null,
+      "color": null,
+      "cssProfile": "tint",
+      "description": "Tint Glass：clearEffects() + 极薄蓝白 tint，用来观察多少面色仍能保持清透。"
+    },
+    "frost": {
+      "label": "CSS Frost",
+      "effect": null,
+      "color": null,
+      "cssProfile": "frost",
+      "description": "CSS Frost：clearEffects() + 4px CSS backdrop blur。用来验证 WebView2 的 CSS blur 是否能作用到桌面背景。"
+    },
+    "acrylic-0": {
+      "label": "Acrylic α0",
+      "effect": "acrylic",
+      "color": [92, 170, 226, 0],
+      "cssProfile": "edge",
+      "description": "Acrylic α0：系统 Acrylic，但 tint alpha = 0。若仍明显不透，主要来源就是 Acrylic 自身的 blur/luminosity，而不是 tint。"
+    },
+    "acrylic-12": {
+      "label": "Acrylic α12",
       "effect": "acrylic",
       "color": [92, 170, 226, 12],
-      "description": "Thin Acrylic：系统 Acrylic + 极低 alpha tint，用来判断能否在保留轻微模糊的同时接近 Crystal 的通透度。"
+      "cssProfile": "edge",
+      "description": "Acrylic α12：系统 Acrylic + 很低 tint，和 α0、α78 直接比较。"
     },
-    "acrylic": {
-      "label": "Acrylic",
+    "acrylic-78": {
+      "label": "Acrylic α78",
       "effect": "acrylic",
       "color": [92, 170, 226, 78],
-      "description": "Acrylic：保留上一版较明显的系统 blur + 蓝色 tint，作为磨砂玻璃对照。"
+      "cssProfile": "edge",
+      "description": "Acrylic α78：之前的标准对照，保留明显磨砂和蓝色 tint。"
     },
-    "blur": {
-      "label": "Blur",
+    "blur-0": {
+      "label": "Blur α0",
       "effect": "blur",
-      "color": [92, 170, 226, 78],
-      "description": "Blur：Windows 系统背景模糊，使用与标准 Acrylic 相同 tint 作为对照。"
+      "color": [92, 170, 226, 0],
+      "cssProfile": "edge",
+      "description": "Blur α0：Windows Blur，tint alpha = 0，用来和 Acrylic α0 判断系统 blur 类型本身的差异。"
     }
   }
 }
