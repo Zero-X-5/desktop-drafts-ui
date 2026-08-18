@@ -2,7 +2,7 @@
 
 - 更新日期: 2026-08-18
 - 更新 Agent: ChatGPT
-- 对应 HEAD commit: `745fc774`（蓝白分层玻璃三态版本；本提交先同步真实分支 HEAD，再开始 Crystal / Thin Acrylic 四态实验）
+- 对应代码 HEAD: `28839cb1`（Crystal / Thin Acrylic / Acrylic / Blur 四态实验已实现；本提交仅同步交接状态）
 
 ## 当前分支
 
@@ -10,15 +10,13 @@
 
 ## 当前状态
 
-已从 `main@b442e56d` 新开独立实验分支，当前是最小 Tauri 2 Windows 玻璃效果测试窗口。
+已从 `main@b442e56d` 新开独立 Tauri 2 Windows 材质实验分支。根据 Windows 真机反馈，上一版 Acrylic / Blur 都明显不如 Transparent 通透，因此当前实验把 **Crystal（clearEffects）提升为默认主材质**，系统 Acrylic / Blur 改为对照组。
 
-现有版本比较 Acrylic / Blur / Transparent，并共用一套蓝白高透明玻璃 UI。用户真机反馈：Acrylic 与 Blur 不够透，而 Transparent 明显更清透。
+当前四种模式：
 
-本轮目标因此调整为验证“透明水晶玻璃”是否更适合作为拾笺主材质：
-
-1. Crystal / Transparent（默认）
-2. Thin Acrylic（极低 tint）
-3. Acrylic（现有 tint）
+1. Crystal
+2. Thin Acrylic
+3. Acrylic
 4. Blur
 
 本分支不接入 WGC / D3D11 Liquid Glass renderer，也不运行拾笺产品的 Region / 托盘 / 全局快捷键 / 草稿 watcher。
@@ -33,18 +31,58 @@
 - `shadow: false`
 - `backgroundColor: #00000000`
 - `noRedirectionBitmap: true`
-- 顶部自定义 `data-tauri-drag-region` 可直接拖动窗口
+- 顶部 `data-tauri-drag-region` 可拖动窗口
 
-## 本轮执行范围
+## 四态配方
 
-- Crystal 继续使用 `clearEffects()`，但作为默认主材质。
-- Crystal 专属 CSS 降低 tint / surface opacity，并取消内层 14px backdrop blur，让桌面背景尽量清晰透过。
-- Thin Acrylic 使用 Acrylic 系统效果，但 tint alpha 明显降低，用于判断“轻系统 blur + 极薄 tint”是否能兼顾透明度与稳定性。
-- Acrylic 与 Blur 保留作为对照，不改变最小 Rust 启动层和窗口配置。
-- 快捷键改为 1 / 2 / 3 / 4。
-- 所有运行时视觉参数继续放在 `src/glass-test-config.json` 或 CSS，不引入 WebGL / SVG displacement / WGC / D3D11。
+### 1 — Crystal（默认）
 
-## 验证
+- `clearEffects()`
+- 无系统 Acrylic / Blur
+- 外层约 3% 蓝色 tint
+- 内层约 4.5% 浅蓝白 tint
+- 1px 白色亮边 + inset top highlight + 低强度 radial sheen
+- 外层和内层都显式 `backdrop-filter: none`
+- 不再使用上一版 `blur(14px)`
+
+目标：桌面保持清晰透过，用边缘和光泽而不是 blur 制造“水晶玻璃”厚度。
+
+### 2 — Thin Acrylic
+
+- `setEffects({ effects: ['acrylic'], color: [92, 170, 226, 12] })`
+- tint alpha 从标准对照的 78 降到 12
+
+目标：验证系统 Acrylic 本身的 blur 是否仍然过重，以及极低 tint 是否能接近 Crystal 的通透度。
+
+### 3 — Acrylic
+
+- `setEffects({ effects: ['acrylic'], color: [92, 170, 226, 78] })`
+- 保留上一版配方作为磨砂玻璃对照
+
+### 4 — Blur
+
+- `setEffects({ effects: ['blur'], color: [92, 170, 226, 78] })`
+- 与 Acrylic 使用相同 tint，比较系统 Blur 行为
+
+## 切换
+
+点击按钮，或按：
+
+- `1` Crystal
+- `2` Thin Acrylic
+- `3` Acrylic
+- `4` Blur
+
+`main.js` 已改成读取每个模式自己的 `color`；Crystal 的 `effect === null` 时继续调用 `clearEffects()`。
+
+## 已验证
+
+- GitHub code commit：`28839cb1` / `feat: add crystal glass comparison modes`。
+- GitHub readback：`initialMode = crystal`。
+- GitHub readback：Thin Acrylic color = `[92, 170, 226, 12]`。
+- GitHub readback：Acrylic / Blur color = `[92, 170, 226, 78]`。
+- 四态 UI、1~4 快捷键、逐模式 color 与 Crystal 无 14px blur 已写入 `verify_tauri_glass_test.py` 静态契约。
+- Tauri 520×360 透明窗口配置、capability 与最小 Rust Builder 本轮未修改。
 
 Windows 本机建议执行：
 
@@ -54,4 +92,14 @@ cargo check --manifest-path src-tauri/Cargo.toml
 npm run tauri build
 ```
 
-当前 ChatGPT 环境不是 Windows Tauri build host，因此最终系统 backdrop 与拖动表现必须在 Windows 真机确认。
+当前 ChatGPT 环境不是 Windows Tauri build host，因此没有声明 Windows 编译或四态真机视觉 PASS。
+
+## 真机判断顺序
+
+固定同一桌面背景，先比较 `1 Crystal` 与 `2 Thin Acrylic`：
+
+- 背景文字/图标清晰程度；
+- 拖动窗口时背景跟随是否稳定；
+- 是否闪黑/闪白；
+- 亮边和 sheen 是否足以产生玻璃感；
+- 如果 Crystal 已经足够漂亮且明显更稳，后续拾笺优先围绕 Crystal 做产品 UI，而不是继续增加底层图形管线。
