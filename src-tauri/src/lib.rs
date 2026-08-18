@@ -18,7 +18,7 @@ fn native_plate_config() -> Result<NativePlateConfig, serde_json::Error> {
 
 #[cfg(target_os = "windows")]
 fn apply_native_plate_effect(
-    plate: &tauri::Window,
+    plate: &tauri::window::Window,
     kind: &str,
     color: [u8; 4],
 ) -> Result<(), String> {
@@ -47,7 +47,7 @@ fn setup_native_plate(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>
         .ok_or("main window is unavailable")?;
     let config = native_plate_config()?;
 
-    let plate = tauri::WindowBuilder::new(app, "native-plate")
+    let plate = tauri::window::WindowBuilder::new(app, "native-plate")
         .parent_raw(main.hwnd()?)
         .position(config.x, config.y)
         .inner_size(config.width, config.height)
