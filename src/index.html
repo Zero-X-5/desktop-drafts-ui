@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,56 +8,67 @@
 </head>
 <body>
   <main class="test-window" aria-labelledby="title">
+    <div class="glass-sheen glass-sheen-a" aria-hidden="true"></div>
+    <div class="glass-sheen glass-sheen-b" aria-hidden="true"></div>
+
     <header class="titlebar">
       <div class="drag-zone" data-tauri-drag-region>
-        <span class="brand-dot" aria-hidden="true"></span>
-        <div>
-          <strong id="title">Tauri Glass Test</strong>
-          <span>Windows · Acrylic / Blur / Transparent</span>
+        <span class="info-mark" aria-hidden="true">i</span>
+        <div class="title-copy">
+          <strong id="title">Glass Material Test</strong>
+          <span>Tauri 2 · Windows system backdrop</span>
         </div>
       </div>
       <button id="closeButton" class="window-button" type="button" aria-label="关闭">×</button>
     </header>
 
-    <section class="hero">
-      <p class="eyebrow">SYSTEM BACKDROP TEST</p>
-      <h1 id="modeTitle">Acrylic</h1>
-      <p id="modeDescription" class="description">正在初始化窗口效果…</p>
+    <section class="hero" aria-live="polite">
+      <div class="hero-mark" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div>
+        <p class="eyebrow">CURRENT MATERIAL</p>
+        <h1 id="modeTitle">Acrylic</h1>
+      </div>
+    </section>
+
+    <section class="material-card">
+      <div class="material-copy">
+        <span class="card-kicker">SYSTEM BACKDROP</span>
+        <strong id="currentMode">初始化</strong>
+        <p id="modeDescription">正在初始化窗口效果…</p>
+      </div>
+
+      <div class="status-pills">
+        <div class="status-pill">
+          <span>Tauri API</span>
+          <strong id="apiStatus">等待</strong>
+        </div>
+        <div class="status-pill">
+          <span>Window</span>
+          <strong>Transparent</strong>
+        </div>
+      </div>
     </section>
 
     <section class="mode-switcher" aria-label="玻璃效果模式">
       <button class="mode-button" data-mode="acrylic" type="button">
         <strong>Acrylic</strong>
-        <span>Win10 / Win11</span>
+        <span>1 · system tint</span>
       </button>
       <button class="mode-button" data-mode="blur" type="button">
         <strong>Blur</strong>
-        <span>系统模糊</span>
+        <span>2 · lighter blur</span>
       </button>
       <button class="mode-button" data-mode="transparent" type="button">
-        <strong>透明</strong>
-        <span>clearEffects</span>
+        <strong>Transparent</strong>
+        <span>3 · CSS only</span>
       </button>
-    </section>
-
-    <section class="status-card" aria-live="polite">
-      <div>
-        <span>当前模式</span>
-        <strong id="currentMode">初始化</strong>
-      </div>
-      <div>
-        <span>Tauri API</span>
-        <strong id="apiStatus">等待</strong>
-      </div>
-      <div>
-        <span>透明首帧</span>
-        <strong>noRedirectionBitmap</strong>
-      </div>
     </section>
 
     <footer>
-      <span>抓住顶部标题区域来回拖动，直接比较三种模式的稳定性。</span>
-      <span class="shortcut">1 Acrylic · 2 Blur · 3 Transparent</span>
+      <span>拖住顶部移动窗口，观察背景跟随、拖动帧率与闪烁。</span>
+      <span>1 / 2 / 3 切换</span>
     </footer>
   </main>
 
