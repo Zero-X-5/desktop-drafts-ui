@@ -24,8 +24,8 @@
 
 <table>
 <tr>
-<td><img src="./docs/images/shijian-light.jpg" alt="拾笺浅色模式发布预览" width="100%"></td>
-<td><img src="./docs/images/shijian-dark.jpg" alt="拾笺深色模式发布预览" width="100%"></td>
+<td><img src="./docs/images/shijian-light.webp" alt="拾笺浅色模式实际运行截图" width="100%"></td>
+<td><img src="./docs/images/shijian-dark.webp" alt="拾笺深色模式实际运行截图" width="100%"></td>
 </tr>
 <tr>
 <td align="center">浅色模式</td>
@@ -33,7 +33,7 @@
 </tr>
 </table>
 
-> 当前图片基于项目现有 UI、设计规范和功能在沙盒中渲染，用于开源发布展示；正式发行版请以实际 Windows 构建为准。
+> 图片来自实际运行界面；已清理本地草稿标题、正文等可能包含个人信息的内容。
 
 ## 安装
 
@@ -124,7 +124,7 @@ npm run tauri dev
 当前优先级：
 
 - [ ] 发布首个可下载的 Windows `v0.1.0`
-- [x] 补充项目浅色 / 深色发布预览图
+- [x] 补充项目真实深色 / 浅色运行截图（已脱敏）
 - [ ] 完善搜索与多草稿交互
 - [ ] 增加自动化测试覆盖
 - [ ] 根据真实用户反馈继续打磨交互
