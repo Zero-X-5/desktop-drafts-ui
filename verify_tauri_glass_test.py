@@ -111,7 +111,7 @@ assert plate == {
 
 assert 'features = ["tray-icon", "unstable"]' in cargo
 assert 'include_str!("../native-plate.json")' in lib
-assert 'WindowBuilder::new(app, "native-plate")' in lib
+assert 'tauri::window::WindowBuilder::new(app, "native-plate")' in lib
 assert ".parent_raw(main.hwnd()?)" in lib
 assert ".position(config.x, config.y)" in lib
 assert ".inner_size(config.width, config.height)" in lib
