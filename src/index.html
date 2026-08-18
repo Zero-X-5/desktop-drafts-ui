@@ -15,8 +15,8 @@
       <div class="drag-zone" data-tauri-drag-region>
         <span class="info-mark" aria-hidden="true">i</span>
         <div class="title-copy">
-          <strong id="title">Crystal Glass Test</strong>
-          <span>Tauri 2 · clear glass / system backdrop</span>
+          <strong id="title">Glass Transparency Lab</strong>
+          <span>Tauri 2 · clear / CSS / Acrylic / Blur</span>
         </div>
       </div>
       <button id="closeButton" class="window-button" type="button" aria-label="关闭">×</button>
@@ -28,13 +28,13 @@
       </div>
       <div>
         <p class="eyebrow">CURRENT MATERIAL</p>
-        <h1 id="modeTitle">Crystal</h1>
+        <h1 id="modeTitle">Pure</h1>
       </div>
     </section>
 
     <section class="material-card">
       <div class="material-copy">
-        <span class="card-kicker">CLEAR GLASS</span>
+        <span class="card-kicker">TRANSPARENCY LADDER</span>
         <strong id="currentMode">初始化</strong>
         <p id="modeDescription">正在初始化窗口效果…</p>
       </div>
@@ -45,34 +45,54 @@
           <strong id="apiStatus">等待</strong>
         </div>
         <div class="status-pill">
-          <span>Window</span>
-          <strong>Transparent</strong>
+          <span>CSS profile</span>
+          <strong id="cssProfile">—</strong>
+        </div>
+        <div class="status-pill">
+          <span>Tint α</span>
+          <strong id="tintAlpha">—</strong>
         </div>
       </div>
     </section>
 
     <section class="mode-switcher" aria-label="玻璃效果模式">
-      <button class="mode-button" data-mode="crystal" type="button">
-        <strong>Crystal</strong>
-        <span>1 · clearEffects</span>
+      <button class="mode-button" data-mode="pure" type="button">
+        <strong>Pure</strong>
+        <span>1 · clear only</span>
       </button>
-      <button class="mode-button" data-mode="thin-acrylic" type="button">
-        <strong>Thin Acrylic</strong>
-        <span>2 · alpha 12</span>
+      <button class="mode-button" data-mode="edge" type="button">
+        <strong>Edge Glass</strong>
+        <span>2 · edge only</span>
       </button>
-      <button class="mode-button" data-mode="acrylic" type="button">
-        <strong>Acrylic</strong>
-        <span>3 · alpha 78</span>
+      <button class="mode-button" data-mode="tint" type="button">
+        <strong>Tint Glass</strong>
+        <span>3 · thin tint</span>
       </button>
-      <button class="mode-button" data-mode="blur" type="button">
-        <strong>Blur</strong>
-        <span>4 · system blur</span>
+      <button class="mode-button" data-mode="frost" type="button">
+        <strong>CSS Frost</strong>
+        <span>4 · CSS blur 4px</span>
+      </button>
+      <button class="mode-button" data-mode="acrylic-0" type="button">
+        <strong>Acrylic α0</strong>
+        <span>5 · system</span>
+      </button>
+      <button class="mode-button" data-mode="acrylic-12" type="button">
+        <strong>Acrylic α12</strong>
+        <span>6 · system</span>
+      </button>
+      <button class="mode-button" data-mode="acrylic-78" type="button">
+        <strong>Acrylic α78</strong>
+        <span>7 · system</span>
+      </button>
+      <button class="mode-button" data-mode="blur-0" type="button">
+        <strong>Blur α0</strong>
+        <span>8 · system</span>
       </button>
     </section>
 
     <footer>
-      <span>拖住顶部移动窗口，优先比较清晰透过、拖动帧率与闪烁。</span>
-      <span>1 / 2 / 3 / 4 切换</span>
+      <span>把窗口放在文字/图标上拖动，比较“清晰度、模糊、染色、闪烁”。</span>
+      <span>1–8 快捷切换</span>
     </footer>
   </main>
 
