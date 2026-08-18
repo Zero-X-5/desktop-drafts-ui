@@ -2,6 +2,8 @@ const modeTitle = document.querySelector('#modeTitle');
 const modeDescription = document.querySelector('#modeDescription');
 const currentMode = document.querySelector('#currentMode');
 const apiStatus = document.querySelector('#apiStatus');
+const cssProfile = document.querySelector('#cssProfile');
+const tintAlpha = document.querySelector('#tintAlpha');
 const closeButton = document.querySelector('#closeButton');
 const modeButtons = [...document.querySelectorAll('[data-mode]')];
 
@@ -16,11 +18,15 @@ function setActiveButton(mode) {
 }
 
 function setStatus(mode, state, message) {
+  const spec = config?.modes?.[mode];
   document.documentElement.dataset.mode = mode;
-  currentMode.textContent = config?.modes?.[mode]?.label ?? mode;
+  document.documentElement.dataset.profile = spec?.cssProfile ?? 'pure';
+  currentMode.textContent = spec?.label ?? mode;
   apiStatus.textContent = state;
   apiStatus.dataset.state = state === 'OK' ? 'ok' : state === 'ERROR' ? 'error' : 'pending';
-  modeTitle.textContent = config?.modes?.[mode]?.label ?? mode;
+  cssProfile.textContent = spec?.cssProfile ?? '—';
+  tintAlpha.textContent = Array.isArray(spec?.color) ? String(spec.color[3]) : '—';
+  modeTitle.textContent = spec?.label ?? mode;
   modeDescription.textContent = message;
 }
 
@@ -84,6 +90,8 @@ async function bootstrap() {
     currentMode.textContent = '不可用';
     apiStatus.textContent = 'ERROR';
     apiStatus.dataset.state = 'error';
+    cssProfile.textContent = '—';
+    tintAlpha.textContent = '—';
     modeDescription.textContent = `初始化失败：${String(error)}`;
   }
 }
