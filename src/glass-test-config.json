@@ -8,7 +8,9 @@
     "5": "acrylic-0",
     "6": "acrylic-12",
     "7": "acrylic-78",
-    "8": "blur-0"
+    "8": "blur-0",
+    "9": "split-acrylic",
+    "0": "split-clear"
   },
   "modes": {
     "pure": {
@@ -66,6 +68,20 @@
       "color": [92, 170, 226, 0],
       "cssProfile": "edge",
       "description": "Blur α0：Windows Blur，tint alpha = 0，用来和 Acrylic α0 判断系统 blur 类型本身的差异。"
+    },
+    "split-acrylic": {
+      "label": "Split Acrylic",
+      "effect": "acrylic",
+      "color": [92, 170, 226, 0],
+      "cssProfile": "split",
+      "description": "Split Acrylic：整窗 Acrylic α0；左侧保持清透，右侧叠局部 frost + 白色 luminosity 渐变，模拟参考图左透右磨砂。"
+    },
+    "split-clear": {
+      "label": "Split Clear",
+      "effect": null,
+      "color": null,
+      "cssProfile": "split",
+      "description": "Split Clear：完全 clearEffects()，但使用和 Split Acrylic 相同的左右分区 CSS，用来隔离系统 Acrylic 的贡献。"
     }
   }
 }
