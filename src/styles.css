@@ -106,7 +106,7 @@ button {
   transform: rotate(18deg);
 }
 
-html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .test-window {
+html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"], [data-profile="split"]) .test-window {
   border-color: rgba(255, 255, 255, .62);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .78),
@@ -115,16 +115,16 @@ html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .t
     inset -1px 0 0 rgba(255, 255, 255, .16);
 }
 
-html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .test-window::before,
-html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .test-window::after {
+html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"], [data-profile="split"]) .test-window::before,
+html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"], [data-profile="split"]) .test-window::after {
   opacity: 1;
 }
 
-html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .glass-sheen-a {
+html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"], [data-profile="split"]) .glass-sheen-a {
   opacity: .32;
 }
 
-html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .glass-sheen-b {
+html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"], [data-profile="split"]) .glass-sheen-b {
   opacity: .18;
 }
 
@@ -137,6 +137,32 @@ html:is([data-profile="tint"], [data-profile="frost"]) .test-window {
 html[data-profile="frost"] .test-window {
   -webkit-backdrop-filter: blur(4px) saturate(1.08) brightness(1.02);
   backdrop-filter: blur(4px) saturate(1.08) brightness(1.02);
+}
+
+/*
+ * Reference split: the left stays close to Edge Glass. The right half receives
+ * an additional local frost/luminosity layer through a soft mask. This is used
+ * with both clearEffects() and Acrylic alpha 0 so the system contribution can
+ * be isolated on the same CSS surface.
+ */
+html[data-profile="split"] .test-window::after {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 22%;
+  height: auto;
+  border-radius: 0 27px 27px 0;
+  background:
+    linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, .025) 26%,
+      rgba(255, 255, 255, .085) 56%,
+      rgba(255, 250, 244, .145) 78%,
+      rgba(255, 248, 240, .19) 100%);
+  -webkit-backdrop-filter: blur(14px) saturate(1.12) brightness(1.055);
+  backdrop-filter: blur(14px) saturate(1.12) brightness(1.055);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .10) 18%, rgba(0, 0, 0, .58) 50%, #000 76%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .10) 18%, rgba(0, 0, 0, .58) 50%, #000 76%);
 }
 
 .titlebar {
@@ -294,14 +320,22 @@ html[data-profile="frost"] .test-window {
     linear-gradient(110deg, rgba(255, 255, 255, .045), transparent 34%);
 }
 
-html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .material-card {
+.material-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"], [data-profile="split"]) .material-card {
   border-color: rgba(255, 255, 255, .52);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .54),
     inset 0 -1px 0 rgba(81, 151, 194, .10);
 }
 
-html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"]) .material-card::before {
+html:is([data-profile="edge"], [data-profile="tint"], [data-profile="frost"], [data-profile="split"]) .material-card::before {
   opacity: 1;
 }
 
@@ -314,6 +348,26 @@ html:is([data-profile="tint"], [data-profile="frost"]) .material-card {
 html[data-profile="frost"] .material-card {
   -webkit-backdrop-filter: blur(4px) saturate(1.06);
   backdrop-filter: blur(4px) saturate(1.06);
+}
+
+html[data-profile="split"] .material-card {
+  background:
+    linear-gradient(90deg,
+      rgba(255, 255, 255, .012) 0%,
+      rgba(255, 255, 255, .020) 31%,
+      rgba(255, 255, 255, .060) 58%,
+      rgba(255, 249, 242, .115) 100%);
+}
+
+html[data-profile="split"] .material-card::after {
+  right: 0;
+  left: 34%;
+  opacity: 1;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .035) 42%, rgba(255, 250, 244, .085));
+  -webkit-backdrop-filter: blur(8px) saturate(1.10) brightness(1.035);
+  backdrop-filter: blur(8px) saturate(1.10) brightness(1.035);
+  -webkit-mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, .42) 42%, #000 76%);
+  mask-image: linear-gradient(90deg, transparent, rgba(0, 0, 0, .42) 42%, #000 76%);
 }
 
 .material-copy,
@@ -404,7 +458,7 @@ html[data-profile="frost"] .material-card {
 
 .mode-switcher {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: 56px;
   gap: 6px;
 }
@@ -439,6 +493,14 @@ html[data-profile="frost"] .material-card {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .56),
     inset 0 0 14px rgba(215, 245, 255, .045);
+}
+
+.mode-button.reference-mode {
+  border-color: rgba(255, 241, 226, .38);
+}
+
+.mode-button.reference-mode.active {
+  background: linear-gradient(135deg, rgba(119, 194, 235, .10), rgba(255, 198, 155, .12));
 }
 
 .mode-button strong {
