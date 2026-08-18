@@ -1,17 +1,12 @@
 :root {
   color-scheme: light;
   font-family: "Inter Variable", Inter, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  --glass-blue: rgba(112, 181, 232, .18);
-  --glass-blue-strong: rgba(151, 209, 247, .28);
-  --glass-white: rgba(244, 250, 255, .62);
-  --glass-white-soft: rgba(237, 247, 255, .42);
-  --text-on-glass: rgba(247, 252, 255, .96);
-  --text-on-glass-muted: rgba(238, 248, 255, .72);
-  --ink: #162536;
-  --ink-soft: rgba(22, 37, 54, .66);
-  --line-bright: rgba(255, 255, 255, .66);
-  --line-soft: rgba(220, 241, 255, .32);
-  --accent: #62b8ef;
+  --text-on-glass: rgba(248, 253, 255, .96);
+  --text-on-glass-muted: rgba(238, 249, 255, .72);
+  --ink: #13283a;
+  --ink-soft: rgba(19, 40, 58, .68);
+  --line-bright: rgba(255, 255, 255, .68);
+  --accent: #6fc7f3;
   --success: #176f4b;
   --danger: #a43d4b;
 }
@@ -38,30 +33,31 @@ button {
   font: inherit;
 }
 
+/* Crystal is intentionally the CSS baseline: no blur, only optical-looking layers. */
 .test-window {
   position: relative;
   width: 100%;
   height: 100%;
   display: grid;
-  grid-template-rows: 42px 76px 1fr 64px 28px;
-  gap: 10px;
-  padding: 0 18px 14px;
+  grid-template-rows: 42px 70px 1fr 60px 26px;
+  gap: 8px;
+  padding: 0 16px 12px;
   overflow: hidden;
   isolation: isolate;
   border: 1px solid var(--line-bright);
   border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, .18), rgba(255, 255, 255, .035) 42%, rgba(86, 165, 221, .10)),
-    radial-gradient(110% 80% at 84% 4%, rgba(221, 246, 255, .34), transparent 56%),
-    radial-gradient(95% 95% at 6% 0%, rgba(92, 160, 226, .26), transparent 58%),
-    var(--glass-blue);
+    linear-gradient(180deg, rgba(255, 255, 255, .070), rgba(255, 255, 255, .018) 46%, rgba(94, 184, 235, .032)),
+    radial-gradient(105% 76% at 86% 0%, rgba(223, 248, 255, .105), transparent 58%),
+    radial-gradient(92% 92% at 4% 4%, rgba(77, 164, 224, .080), transparent 60%),
+    rgba(80, 154, 207, .030);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .86),
-    inset 0 -1px 0 rgba(100, 177, 226, .16),
-    inset 1px 0 0 rgba(255, 255, 255, .25),
+    inset 0 1px 0 rgba(255, 255, 255, .88),
+    inset 0 -1px 0 rgba(110, 191, 233, .18),
+    inset 1px 0 0 rgba(255, 255, 255, .26),
     inset -1px 0 0 rgba(255, 255, 255, .20);
-  -webkit-backdrop-filter: saturate(1.34) brightness(1.06);
-  backdrop-filter: saturate(1.34) brightness(1.06);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .test-window::before {
@@ -72,20 +68,20 @@ button {
   border-radius: 27px;
   pointer-events: none;
   background:
-    linear-gradient(116deg, rgba(255, 255, 255, .20), transparent 27%, transparent 68%, rgba(202, 239, 255, .13)),
-    linear-gradient(180deg, rgba(255, 255, 255, .13), transparent 22%);
+    linear-gradient(116deg, rgba(255, 255, 255, .115), transparent 25%, transparent 70%, rgba(207, 242, 255, .060)),
+    linear-gradient(180deg, rgba(255, 255, 255, .090), transparent 19%);
 }
 
 .test-window::after {
   content: "";
   position: absolute;
   z-index: -1;
-  left: 28px;
-  right: 28px;
+  left: 34px;
+  right: 34px;
   bottom: 1px;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .56), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .54), transparent);
 }
 
 .glass-sheen {
@@ -93,39 +89,27 @@ button {
   z-index: -1;
   border-radius: 999px;
   pointer-events: none;
-  filter: blur(8px);
-  opacity: .86;
+  filter: blur(9px);
 }
 
 .glass-sheen-a {
   width: 250px;
-  height: 120px;
-  right: -38px;
-  top: -62px;
-  background: radial-gradient(ellipse at center, rgba(233, 251, 255, .50), rgba(148, 217, 255, .13) 52%, transparent 72%);
+  height: 116px;
+  right: -40px;
+  top: -64px;
+  opacity: .52;
+  background: radial-gradient(ellipse at center, rgba(239, 253, 255, .32), rgba(155, 222, 255, .07) 52%, transparent 72%);
   transform: rotate(-8deg);
 }
 
 .glass-sheen-b {
-  width: 190px;
-  height: 110px;
-  left: -46px;
-  top: 28px;
-  background: radial-gradient(ellipse at center, rgba(72, 143, 211, .26), transparent 70%);
+  width: 180px;
+  height: 104px;
+  left: -50px;
+  top: 26px;
+  opacity: .34;
+  background: radial-gradient(ellipse at center, rgba(76, 157, 218, .18), transparent 72%);
   transform: rotate(18deg);
-}
-
-html[data-mode="blur"] .test-window {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .025) 46%, rgba(82, 157, 211, .075)),
-    radial-gradient(110% 80% at 84% 4%, rgba(221, 246, 255, .26), transparent 56%),
-    var(--glass-blue);
-}
-
-html[data-mode="transparent"] .test-window {
-  background:
-    linear-gradient(180deg, rgba(195, 231, 255, .22), rgba(83, 156, 211, .11)),
-    rgba(65, 119, 167, .18);
 }
 
 .titlebar {
@@ -133,7 +117,7 @@ html[data-mode="transparent"] .test-window {
   display: flex;
   align-items: center;
   min-width: 0;
-  margin: 0 -4px;
+  margin: 0 -3px;
 }
 
 .drag-zone {
@@ -143,7 +127,7 @@ html[data-mode="transparent"] .test-window {
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 0 4px;
+  padding: 0 3px;
   cursor: default;
 }
 
@@ -153,14 +137,12 @@ html[data-mode="transparent"] .test-window {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, .72);
+  border: 1px solid rgba(255, 255, 255, .70);
   border-radius: 999px;
-  color: rgba(255, 255, 255, .92);
-  background: rgba(255, 255, 255, .08);
-  font-size: 11px;
-  font-weight: 700;
-  font-family: Georgia, serif;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32);
+  color: rgba(255, 255, 255, .94);
+  background: rgba(255, 255, 255, .055);
+  font: 700 11px Georgia, serif;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .34);
 }
 
 .title-copy {
@@ -173,7 +155,7 @@ html[data-mode="transparent"] .test-window {
   font-size: 12px;
   font-weight: 650;
   line-height: 1.15;
-  text-shadow: 0 1px 10px rgba(13, 51, 84, .26);
+  text-shadow: 0 1px 10px rgba(13, 51, 84, .30);
 }
 
 .title-copy span {
@@ -189,8 +171,8 @@ html[data-mode="transparent"] .test-window {
   height: 28px;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .07);
-  color: rgba(255, 255, 255, .74);
+  background: rgba(255, 255, 255, .045);
+  color: rgba(255, 255, 255, .78);
   font-size: 17px;
   line-height: 1;
   cursor: pointer;
@@ -199,7 +181,7 @@ html[data-mode="transparent"] .test-window {
 
 .window-button:hover {
   color: #fff;
-  background: rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .14);
 }
 
 .window-button:active {
@@ -211,35 +193,33 @@ html[data-mode="transparent"] .test-window {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 15px;
   padding: 0 4px 2px;
-  text-align: left;
 }
 
 .hero-mark {
-  width: 58px;
-  height: 58px;
+  width: 54px;
+  height: 54px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
   gap: 3px;
   padding: 3px;
+  border: 1px solid rgba(255, 255, 255, .18);
   border-radius: 12px;
-  background: rgba(255, 255, 255, .09);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .38),
-    0 10px 28px rgba(27, 92, 143, .14);
+  background: rgba(255, 255, 255, .035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28);
 }
 
 .hero-mark span {
   border-radius: 2px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, .90), rgba(202, 235, 255, .60));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28);
+  background: linear-gradient(145deg, rgba(255, 255, 255, .88), rgba(205, 238, 255, .54));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .26);
 }
 
 .eyebrow {
   margin: 0 0 3px;
-  color: rgba(239, 249, 255, .72);
+  color: rgba(239, 249, 255, .74);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: .14em;
@@ -248,34 +228,35 @@ html[data-mode="transparent"] .test-window {
 .hero h1 {
   margin: 0;
   color: rgba(255, 255, 255, .98);
-  font-size: 35px;
+  font-size: 34px;
   font-weight: 520;
   letter-spacing: -.045em;
   line-height: .95;
-  text-shadow: 0 3px 22px rgba(14, 67, 110, .24);
+  text-shadow: 0 3px 22px rgba(14, 67, 110, .26);
 }
 
+/* The inner card stays clear too. System Acrylic/Blur is the only blur source in those modes. */
 .material-card {
   position: relative;
   min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 166px;
-  gap: 18px;
+  grid-template-columns: 1fr 158px;
+  gap: 16px;
   align-items: center;
-  padding: 16px 18px;
+  padding: 14px 16px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .76);
+  border: 1px solid rgba(255, 255, 255, .58);
   border-radius: 22px;
   color: var(--ink);
   background:
-    linear-gradient(145deg, rgba(250, 253, 255, .68), rgba(220, 240, 255, .52)),
-    var(--glass-white-soft);
+    linear-gradient(145deg, rgba(250, 253, 255, .155), rgba(220, 242, 255, .075)),
+    rgba(235, 248, 255, .045);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .94),
-    inset 0 -1px 0 rgba(102, 170, 217, .18),
-    0 12px 34px rgba(33, 95, 139, .12);
-  -webkit-backdrop-filter: blur(14px) saturate(1.18) brightness(1.05);
-  backdrop-filter: blur(14px) saturate(1.18) brightness(1.05);
+    inset 0 1px 0 rgba(255, 255, 255, .72),
+    inset 0 -1px 0 rgba(102, 170, 217, .12),
+    0 10px 30px rgba(33, 95, 139, .07);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .material-card::before {
@@ -284,8 +265,8 @@ html[data-mode="transparent"] .test-window {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(90% 120% at 100% 0%, rgba(255, 255, 255, .34), transparent 58%),
-    linear-gradient(110deg, rgba(255, 255, 255, .18), transparent 34%);
+    radial-gradient(90% 120% at 100% 0%, rgba(255, 255, 255, .15), transparent 58%),
+    linear-gradient(110deg, rgba(255, 255, 255, .075), transparent 34%);
 }
 
 .material-copy,
@@ -301,7 +282,7 @@ html[data-mode="transparent"] .test-window {
 .card-kicker {
   display: block;
   margin-bottom: 3px;
-  color: rgba(33, 77, 109, .56);
+  color: rgba(25, 68, 99, .60);
   font-size: 8.5px;
   font-weight: 720;
   letter-spacing: .12em;
@@ -315,38 +296,38 @@ html[data-mode="transparent"] .test-window {
 }
 
 .material-copy p {
-  max-width: 270px;
+  max-width: 282px;
   min-height: 30px;
   margin: 5px 0 0;
   color: var(--ink-soft);
-  font-size: 10.5px;
-  line-height: 1.45;
+  font-size: 10.2px;
+  line-height: 1.42;
 }
 
 .status-pills {
   display: grid;
-  gap: 7px;
+  gap: 6px;
 }
 
 .status-pill {
   min-width: 0;
   display: grid;
   gap: 2px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 255, 255, .66);
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, .48);
   border-radius: 12px;
-  background: rgba(246, 252, 255, .34);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .60);
+  background: rgba(246, 252, 255, .085);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42);
 }
 
 .status-pill span {
-  color: rgba(31, 72, 102, .54);
+  color: rgba(31, 72, 102, .58);
   font-size: 8.5px;
 }
 
 .status-pill strong {
   overflow: hidden;
-  color: rgba(19, 48, 70, .82);
+  color: rgba(19, 48, 70, .86);
   font-size: 10px;
   font-weight: 650;
   white-space: nowrap;
@@ -367,28 +348,28 @@ html[data-mode="transparent"] .test-window {
 
 .mode-switcher {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .mode-button {
   min-width: 0;
-  height: 64px;
+  height: 60px;
   display: grid;
   place-content: center;
   gap: 3px;
-  border: 1px solid rgba(255, 255, 255, .44);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .06));
-  color: rgba(247, 252, 255, .90);
+  padding: 0 5px;
+  border: 1px solid rgba(255, 255, 255, .38);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .085), rgba(255, 255, 255, .028));
+  color: rgba(247, 252, 255, .92);
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
   transition: transform 100ms ease, background 120ms ease, border-color 120ms ease;
 }
 
 .mode-button:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, .09));
+  background: linear-gradient(180deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .055));
 }
 
 .mode-button:active {
@@ -397,21 +378,26 @@ html[data-mode="transparent"] .test-window {
 
 .mode-button.active {
   border-color: rgba(255, 255, 255, .82);
-  background:
-    linear-gradient(180deg, rgba(218, 244, 255, .34), rgba(107, 188, 235, .18));
+  background: linear-gradient(180deg, rgba(218, 244, 255, .20), rgba(107, 188, 235, .085));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .68),
-    inset 0 0 18px rgba(214, 244, 255, .08);
+    inset 0 1px 0 rgba(255, 255, 255, .62),
+    inset 0 0 16px rgba(214, 244, 255, .055);
 }
 
 .mode-button strong {
-  font-size: 11.5px;
+  overflow: hidden;
+  font-size: 10.6px;
   font-weight: 650;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .mode-button span {
-  color: rgba(238, 248, 255, .64);
-  font-size: 8.5px;
+  overflow: hidden;
+  color: rgba(238, 248, 255, .66);
+  font-size: 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 footer {
@@ -420,9 +406,9 @@ footer {
   justify-content: space-between;
   gap: 12px;
   padding: 0 3px;
-  color: rgba(237, 248, 255, .64);
-  font-size: 8.8px;
-  line-height: 1.35;
+  color: rgba(237, 248, 255, .66);
+  font-size: 8.6px;
+  line-height: 1.3;
 }
 
 footer span:last-child {

@@ -36,10 +36,9 @@ async function applyMode(mode) {
     if (spec.effect === null) {
       await appWindow.clearEffects();
     } else {
-      await appWindow.setEffects({
-        effects: [spec.effect],
-        color: config.effectColor,
-      });
+      const effects = { effects: [spec.effect] };
+      if (Array.isArray(spec.color)) effects.color = spec.color;
+      await appWindow.setEffects(effects);
     }
 
     setStatus(mode, 'OK', spec.description);

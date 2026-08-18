@@ -15,8 +15,8 @@
       <div class="drag-zone" data-tauri-drag-region>
         <span class="info-mark" aria-hidden="true">i</span>
         <div class="title-copy">
-          <strong id="title">Glass Material Test</strong>
-          <span>Tauri 2 · Windows system backdrop</span>
+          <strong id="title">Crystal Glass Test</strong>
+          <span>Tauri 2 · clear glass / system backdrop</span>
         </div>
       </div>
       <button id="closeButton" class="window-button" type="button" aria-label="关闭">×</button>
@@ -28,13 +28,13 @@
       </div>
       <div>
         <p class="eyebrow">CURRENT MATERIAL</p>
-        <h1 id="modeTitle">Acrylic</h1>
+        <h1 id="modeTitle">Crystal</h1>
       </div>
     </section>
 
     <section class="material-card">
       <div class="material-copy">
-        <span class="card-kicker">SYSTEM BACKDROP</span>
+        <span class="card-kicker">CLEAR GLASS</span>
         <strong id="currentMode">初始化</strong>
         <p id="modeDescription">正在初始化窗口效果…</p>
       </div>
@@ -52,23 +52,27 @@
     </section>
 
     <section class="mode-switcher" aria-label="玻璃效果模式">
+      <button class="mode-button" data-mode="crystal" type="button">
+        <strong>Crystal</strong>
+        <span>1 · clearEffects</span>
+      </button>
+      <button class="mode-button" data-mode="thin-acrylic" type="button">
+        <strong>Thin Acrylic</strong>
+        <span>2 · alpha 12</span>
+      </button>
       <button class="mode-button" data-mode="acrylic" type="button">
         <strong>Acrylic</strong>
-        <span>1 · system tint</span>
+        <span>3 · alpha 78</span>
       </button>
       <button class="mode-button" data-mode="blur" type="button">
         <strong>Blur</strong>
-        <span>2 · lighter blur</span>
-      </button>
-      <button class="mode-button" data-mode="transparent" type="button">
-        <strong>Transparent</strong>
-        <span>3 · CSS only</span>
+        <span>4 · system blur</span>
       </button>
     </section>
 
     <footer>
-      <span>拖住顶部移动窗口，观察背景跟随、拖动帧率与闪烁。</span>
-      <span>1 / 2 / 3 切换</span>
+      <span>拖住顶部移动窗口，优先比较清晰透过、拖动帧率与闪烁。</span>
+      <span>1 / 2 / 3 / 4 切换</span>
     </footer>
   </main>
 

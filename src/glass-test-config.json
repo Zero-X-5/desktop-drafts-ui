@@ -1,26 +1,35 @@
 {
-  "initialMode": "acrylic",
-  "effectColor": [92, 170, 226, 78],
+  "initialMode": "crystal",
   "shortcuts": {
-    "1": "acrylic",
-    "2": "blur",
-    "3": "transparent"
+    "1": "crystal",
+    "2": "thin-acrylic",
+    "3": "acrylic",
+    "4": "blur"
   },
   "modes": {
+    "crystal": {
+      "label": "Crystal",
+      "effect": null,
+      "color": null,
+      "description": "Crystal：clearEffects() + 极薄 CSS 高光层。桌面保持清晰透过，不使用系统 blur，也不使用内层 backdrop blur。"
+    },
+    "thin-acrylic": {
+      "label": "Thin Acrylic",
+      "effect": "acrylic",
+      "color": [92, 170, 226, 12],
+      "description": "Thin Acrylic：系统 Acrylic + 极低 alpha tint，用来判断能否在保留轻微模糊的同时接近 Crystal 的通透度。"
+    },
     "acrylic": {
       "label": "Acrylic",
       "effect": "acrylic",
-      "description": "系统 Acrylic 负责真实桌面模糊，CSS 只叠蓝白光泽、亮边与内层厚玻璃。"
+      "color": [92, 170, 226, 78],
+      "description": "Acrylic：保留上一版较明显的系统 blur + 蓝色 tint，作为磨砂玻璃对照。"
     },
     "blur": {
       "label": "Blur",
       "effect": "blur",
-      "description": "更轻的系统 Blur，保留同一套蓝白玻璃 UI，用来比较拖动流畅度与背景响应。"
-    },
-    "transparent": {
-      "label": "Transparent",
-      "effect": null,
-      "description": "清除系统 backdrop，只剩半透明 CSS 玻璃层，是性能与视觉的无系统模糊基准。"
+      "color": [92, 170, 226, 78],
+      "description": "Blur：Windows 系统背景模糊，使用与标准 Acrylic 相同 tint 作为对照。"
     }
   }
 }
