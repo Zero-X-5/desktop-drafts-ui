@@ -2,7 +2,7 @@
 
 - 更新日期: 2026-08-18
 - 更新 Agent: ChatGPT
-- 对应 HEAD commit: `910dad4b`（10 态透明度梯度 + Split Acrylic / Split Clear 已完成；本提交仅同步真实远端 HEAD，随后开始右侧 Native Acrylic plate 实验）
+- 对应 HEAD commit: `5b2cc52a`（Native Acrylic / Blur child-HWND plate 已实现；本提交仅同步最终交接状态）
 
 ## 当前分支
 
@@ -10,35 +10,86 @@
 
 ## 当前状态
 
-当前实验为 **10 态透明度梯度**。真机已验证：
+已从“整窗 Acrylic + CSS split”切换到真正的**局部原生 backdrop plate 实验**：
 
-- `9 Split Acrylic`：整窗先经过 Acrylic，因此左侧无法恢复清晰背景；
-- `0 Split Clear`：底层真实透明，背景结构可以清楚透过；
-- CSS `backdrop-filter` 对 HWND 后面的真实桌面只表现出很弱的局部模糊，无法稳定复刻参考图右侧的系统磨砂。
+- 主窗口仍是 620×430 透明 Tauri WebViewWindow；
+- 新增 `native-plate`，它是没有 WebView 的纯 Tauri Window；
+- Windows 下 plate 通过 `parent_raw(main.hwnd())` 成为 main 的 child HWND；
+- plate 只覆盖右侧 x=120..620；
+- plate 忽略鼠标、不可聚焦、无装饰/阴影、隐藏任务栏、always-on-bottom；
+- `9`：主窗口 clear + 右侧 Native Acrylic plate；
+- `0`：主窗口 clear + 右侧 Native Blur plate；
+- 切到其它模式前会先隐藏 plate，避免污染旧实验。
 
-因此本轮不再继续叠整窗 Acrylic，也不恢复 WGC / D3D11。目标调整为：**主窗口保持透明 WebView，在右侧放一个没有 WebView 的原生 Tauri Window 作为 Acrylic plate**。这样左侧继续 clear glass，右侧才由 Windows 系统 Acrylic 负责磨砂。
+这条路线不引入 WGC、D3D11、WinUI 3、Windows App SDK、Win2D 或 shader。
 
-## 本轮执行范围
+## 当前模式
 
-- 主窗口继续单 WebView、`transparent: true`。
-- 新增一个隐藏的 `native-plate` 原生 Tauri Window（无 WebView）。
-- Windows 下将 plate 作为 main HWND 的 child window，只覆盖右侧区域。
-- plate 使用系统 Acrylic effect、忽略鼠标事件、隐藏任务栏、无装饰/无阴影。
-- `9` 改为 Native Acrylic Plate：主窗口 `clearEffects()`，只显示右侧 plate。
-- `0 Split Clear` 保留，作为完全相同产品窗口下的 CSS split 对照。
-- 退出 Native Plate 模式时立即隐藏 plate，避免污染其它 1–8 模式。
-- plate 几何和 tint 参数写入 `src-tauri/native-plate.json`。
-- 不引入 Windows App SDK、WinUI 3、WGC、D3D11、Win2D 或自定义 shader。
+```text
+1 Pure
+2 Edge Glass
+3 Tint Glass
+4 CSS Frost
+5 Acrylic α0       whole window
+6 Acrylic α12      whole window
+7 Acrylic α78      whole window
+8 Blur α0          whole window
+9 Native Acrylic   right child HWND only
+0 Native Blur      right child HWND only
+```
 
-## 技术依据
+重点比较：
 
-Tauri 2 的纯 `WindowBuilder` 可以创建没有 WebView 的原生窗口，并支持透明窗口、window effects、child/parent HWND 关系和忽略鼠标事件。该方案只增加一个 HWND，不增加第二个 WebView。
+```text
+1 vs 9  → 左侧是否仍保持 Pure 清晰度
+5 vs 9  → 整窗 Acrylic 与局部 Acrylic 的区别
+9 vs 0  → Acrylic / Blur 哪个右侧磨砂更接近参考图
+```
 
-真正的 Windows.UI.Composition `CreateHostBackdropBrush()` 也能采样窗口绘制前的宿主背景，但若要形成 frosted glass 仍需 EffectBrush/Gaussian blur 图形效果；本轮先用 Tauri 已有 Windows Acrylic effect 验证“局部原生 backdrop”架构，避免为一次材质实验引入额外图形依赖。
+## Native plate 配置
 
-## 验证
+`src-tauri/native-plate.json`：
 
-Windows 本机建议执行：
+```json
+{
+  "x": 120,
+  "y": 0,
+  "width": 500,
+  "height": 430,
+  "acrylicColor": [92, 170, 226, 0],
+  "blurColor": [92, 170, 226, 0]
+}
+```
+
+## Rust / Tauri 改动
+
+- `Cargo.toml` 给 Tauri 增加 `unstable` feature，以使用纯 `WindowBuilder`。
+- `setup_native_plate()` 在 setup hook 创建隐藏的 child Window。
+- `set_native_plate(kind)` command 负责 hide / Acrylic / Blur 三态。
+- `main.js` 使用 `window.__TAURI__.core.invoke('set_native_plate', ...)` 控制 plate。
+- 主窗口原有 `setEffects/clearEffects` 仍保留用于 1–8 对照。
+
+## 已完成的静态验证范围
+
+`verify_tauri_glass_test.py` 已锁住：
+
+- 620×430 主窗口透明配置；
+- 10 个模式和 0~9 快捷键；
+- Acrylic α0/12/78；
+- `native-plate.json` 几何与 tint；
+- Tauri `unstable` feature；
+- `WindowBuilder::new(..., "native-plate")`；
+- `parent_raw(main.hwnd())`；
+- ignore cursor / always-on-bottom；
+- Acrylic / Blur plate effect；
+- JS hide→切主 effect→show plate 的时序；
+- WGC / D3D11 / SetWindowRgn 不回流。
+
+## Windows 真机验证
+
+当前 ChatGPT 环境不是 Windows Tauri build host，因此没有声明 `cargo check`、Windows build 或 child HWND Acrylic 真机 PASS。
+
+本机执行：
 
 ```powershell
 python verify_tauri_glass_test.py
@@ -46,4 +97,15 @@ cargo check --manifest-path src-tauri/Cargo.toml
 npm run tauri build
 ```
 
-当前 ChatGPT 环境不是 Windows Tauri build host，因此不会声明 Native plate Windows 编译或真机视觉 PASS。
+然后重点按 `1 / 5 / 9 / 0`，把窗口放在有网格、文字和明显色块的背景上拖动。
+
+### 成功标准
+
+`9 Native Acrylic` 成功时应满足：
+
+- 左侧 x<120 与 `1 Pure` 接近，背景细节仍清晰；
+- 右侧出现系统 Acrylic 磨砂；
+- plate 随主窗口一起移动，不出现脱离；
+- UI 仍由主 WebView 绘制，plate 不抢鼠标/焦点。
+
+如果 plate 在 child HWND 上不显示 Acrylic、出现在 WebView 上方遮住 UI，或 Windows 10 compositor 不接受该 effect，则下一步再切到 Windows.UI.Composition HostBackdropBrush / Windows App SDK DesktopAcrylicController；当前阶段先用最小 child-HWND 方案验证架构。
