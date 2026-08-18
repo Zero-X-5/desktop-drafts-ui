@@ -1,9 +1,13 @@
 [package]
 name = "shijian"
 version = "0.1.0"
-description = "拾笺 - 桌面快速笔记"
-authors = ["you"]
+description = "拾笺 (Shijian) - a lightweight local-first TXT drafts app for Windows"
+authors = ["Zero-X-5"]
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/Zero-X-5/desktop-drafts-ui"
+homepage = "https://github.com/Zero-X-5/desktop-drafts-ui"
+publish = false
 
 [lib]
 name = "shijian_lib"

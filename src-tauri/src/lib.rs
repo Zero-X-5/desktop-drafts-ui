@@ -10,8 +10,6 @@ use tauri::{
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, ShortcutState};
 
-const STORE_DIR_DEFAULT: &str = r"C:\文档\拾笺";
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "snake_case")]
 struct Settings {
@@ -32,10 +30,23 @@ impl Default for Settings {
             hotkey: true,
             auto_save: true,
             transparent: false,
-            store_dir: STORE_DIR_DEFAULT.to_string(),
+            store_dir: String::new(),
             pinned: vec![],
         }
     }
+}
+
+fn default_store_dir(app: &tauri::AppHandle) -> String {
+    app.path()
+        .document_dir()
+        .unwrap_or_else(|_| {
+            app.path()
+                .app_data_dir()
+                .unwrap_or_else(|_| PathBuf::from("."))
+        })
+        .join("拾笺")
+        .to_string_lossy()
+        .to_string()
 }
 
 #[derive(Serialize)]
@@ -53,10 +64,16 @@ fn settings_path(app: &tauri::AppHandle) -> PathBuf {
 }
 
 fn load_settings(app: &tauri::AppHandle) -> Settings {
-    std::fs::read_to_string(settings_path(app))
+    let mut settings: Settings = std::fs::read_to_string(settings_path(app))
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
-        .unwrap_or_default()
+        .unwrap_or_default();
+
+    if settings.store_dir.trim().is_empty() {
+        settings.store_dir = default_store_dir(app);
+    }
+
+    settings
 }
 
 fn save_settings(app: &tauri::AppHandle, s: &Settings) {

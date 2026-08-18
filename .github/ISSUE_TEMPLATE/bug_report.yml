@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a reproducible problem in Shijian
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Shijian. Please remove private draft content, credentials and personal paths before posting.
+  - type: input
+    id: version
+    attributes:
+      label: Shijian version / commit
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: input
+    id: display
+    attributes:
+      label: Display setup
+      description: Include scaling and monitor count when relevant.
+      placeholder: 150% scaling, two monitors
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Screenshots, recordings or logs are useful if they do not contain sensitive information.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing Issues for the same problem.
+          required: true
+        - label: I removed sensitive/private information from this report.
+          required: true
