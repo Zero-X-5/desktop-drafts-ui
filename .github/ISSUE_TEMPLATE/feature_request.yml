@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an improvement for Shijian
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Architecture acknowledgement
+      options:
+        - label: I understand that major window/Region architecture changes may require prior discussion.
+          required: false

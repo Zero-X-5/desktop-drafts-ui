@@ -2,7 +2,21 @@
   "name": "shijian",
   "private": true,
   "version": "0.1.0",
+  "description": "拾笺 (Shijian) — a lightweight local-first TXT drafts app for Windows.",
+  "author": "Zero-X-5",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zero-X-5/desktop-drafts-ui.git"
+  },
+  "homepage": "https://github.com/Zero-X-5/desktop-drafts-ui#readme",
+  "bugs": {
+    "url": "https://github.com/Zero-X-5/desktop-drafts-ui/issues"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "tauri": "tauri"
   },
