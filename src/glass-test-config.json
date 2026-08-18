@@ -9,8 +9,8 @@
     "6": "acrylic-12",
     "7": "acrylic-78",
     "8": "blur-0",
-    "9": "split-acrylic",
-    "0": "split-clear"
+    "9": "native-acrylic",
+    "0": "native-blur"
   },
   "modes": {
     "pure": {
@@ -46,42 +46,44 @@
       "effect": "acrylic",
       "color": [92, 170, 226, 0],
       "cssProfile": "edge",
-      "description": "Acrylic α0：系统 Acrylic，但 tint alpha = 0。若仍明显不透，主要来源就是 Acrylic 自身的 blur/luminosity，而不是 tint。"
+      "description": "Acrylic α0：整窗系统 Acrylic，但 tint alpha = 0。用于证明整窗 Acrylic 会先统一抹掉背景细节。"
     },
     "acrylic-12": {
       "label": "Acrylic α12",
       "effect": "acrylic",
       "color": [92, 170, 226, 12],
       "cssProfile": "edge",
-      "description": "Acrylic α12：系统 Acrylic + 很低 tint，和 α0、α78 直接比较。"
+      "description": "Acrylic α12：整窗系统 Acrylic + 很低 tint，和 α0、α78 直接比较。"
     },
     "acrylic-78": {
       "label": "Acrylic α78",
       "effect": "acrylic",
       "color": [92, 170, 226, 78],
       "cssProfile": "edge",
-      "description": "Acrylic α78：之前的标准对照，保留明显磨砂和蓝色 tint。"
+      "description": "Acrylic α78：之前的标准整窗 Acrylic 对照，保留明显磨砂和蓝色 tint。"
     },
     "blur-0": {
       "label": "Blur α0",
       "effect": "blur",
       "color": [92, 170, 226, 0],
       "cssProfile": "edge",
-      "description": "Blur α0：Windows Blur，tint alpha = 0，用来和 Acrylic α0 判断系统 blur 类型本身的差异。"
+      "description": "Blur α0：整窗 Windows Blur，tint alpha = 0，用来和 Acrylic α0 判断系统 blur 类型本身的差异。"
     },
-    "split-acrylic": {
-      "label": "Split Acrylic",
-      "effect": "acrylic",
-      "color": [92, 170, 226, 0],
-      "cssProfile": "split",
-      "description": "Split Acrylic：整窗 Acrylic α0；左侧保持清透，右侧叠局部 frost + 白色 luminosity 渐变，模拟参考图左透右磨砂。"
-    },
-    "split-clear": {
-      "label": "Split Clear",
+    "native-acrylic": {
+      "label": "Native Acrylic Plate",
       "effect": null,
       "color": null,
-      "cssProfile": "split",
-      "description": "Split Clear：完全 clearEffects()，但使用和 Split Acrylic 相同的左右分区 CSS，用来隔离系统 Acrylic 的贡献。"
+      "cssProfile": "edge",
+      "nativePlate": "acrylic",
+      "description": "Native Acrylic Plate：主 WebView 保持 clearEffects()；只有右侧无 WebView 的 child HWND 开启系统 Acrylic。左侧应保持真正清透。"
+    },
+    "native-blur": {
+      "label": "Native Blur Plate",
+      "effect": null,
+      "color": null,
+      "cssProfile": "edge",
+      "nativePlate": "blur",
+      "description": "Native Blur Plate：主 WebView 保持 clearEffects()；只有右侧无 WebView 的 child HWND 开启系统 Blur，用来和 Native Acrylic Plate 对比。"
     }
   }
 }
