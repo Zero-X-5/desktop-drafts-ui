@@ -7,8 +7,10 @@ js = (root / "src" / "main.js").read_text(encoding="utf-8")
 css = (root / "src" / "styles.css").read_text(encoding="utf-8")
 config = json.loads((root / "src" / "glass-test-config.json").read_text(encoding="utf-8"))
 tauri = json.loads((root / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
+plate = json.loads((root / "src-tauri" / "native-plate.json").read_text(encoding="utf-8"))
 cap = json.loads((root / "src-tauri" / "capabilities" / "default.json").read_text(encoding="utf-8"))
 lib = (root / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+cargo = (root / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
 
 window = tauri["app"]["windows"][0]
 assert window["label"] == "main"
@@ -33,26 +35,31 @@ modes = (
     "acrylic-12",
     "acrylic-78",
     "blur-0",
-    "split-acrylic",
-    "split-clear",
+    "native-acrylic",
+    "native-blur",
 )
 for mode in modes:
     assert f'data-mode="{mode}"' in index
 
 assert "Glass Transparency Lab" in index
+assert "local native plate" in index
+assert "Native Acrylic Plate" in index
+assert "Native Blur Plate" in index
 assert "data-tauri-drag-region" in index
 assert "cssProfile" in index
 assert "tintAlpha" in index
-assert "Split Acrylic" in index
-assert "Split Clear" in index
 
 assert "window.__TAURI__?.window" in js
+assert "window.__TAURI__?.core" in js
 assert "getCurrentWindow()" in js
+assert "tauriCore.invoke('set_native_plate'" in js
+assert "await setNativePlate(null)" in js
+assert "await setNativePlate(spec.nativePlate)" in js
 assert "appWindow.setEffects" in js
 assert "appWindow.clearEffects" in js
 assert "dataset.profile" in js
+assert "dataset.nativePlate" in js
 assert "spec?.cssProfile" in js
-assert "Array.isArray(spec?.color)" in js
 assert "Array.isArray(spec.color)" in js
 assert "effects.color = spec.color" in js
 
@@ -66,11 +73,11 @@ assert config["shortcuts"] == {
     "6": "acrylic-12",
     "7": "acrylic-78",
     "8": "blur-0",
-    "9": "split-acrylic",
-    "0": "split-clear",
+    "9": "native-acrylic",
+    "0": "native-blur",
 }
 
-for mode in ("pure", "edge", "tint", "frost", "split-clear"):
+for mode in ("pure", "edge", "tint", "frost", "native-acrylic", "native-blur"):
     assert config["modes"][mode]["effect"] is None
     assert config["modes"][mode]["color"] is None
 
@@ -78,7 +85,6 @@ assert config["modes"]["pure"]["cssProfile"] == "pure"
 assert config["modes"]["edge"]["cssProfile"] == "edge"
 assert config["modes"]["tint"]["cssProfile"] == "tint"
 assert config["modes"]["frost"]["cssProfile"] == "frost"
-assert config["modes"]["split-clear"]["cssProfile"] == "split"
 
 assert config["modes"]["acrylic-0"]["effect"] == "acrylic"
 assert config["modes"]["acrylic-0"]["color"] == [92, 170, 226, 0]
@@ -89,27 +95,43 @@ assert config["modes"]["blur-0"]["color"] == [92, 170, 226, 0]
 for mode in ("acrylic-0", "acrylic-12", "acrylic-78", "blur-0"):
     assert config["modes"][mode]["cssProfile"] == "edge"
 
-assert config["modes"]["split-acrylic"]["effect"] == "acrylic"
-assert config["modes"]["split-acrylic"]["color"] == [92, 170, 226, 0]
-assert config["modes"]["split-acrylic"]["cssProfile"] == "split"
+assert config["modes"]["native-acrylic"]["cssProfile"] == "edge"
+assert config["modes"]["native-acrylic"]["nativePlate"] == "acrylic"
+assert config["modes"]["native-blur"]["cssProfile"] == "edge"
+assert config["modes"]["native-blur"]["nativePlate"] == "blur"
+
+assert plate == {
+    "x": 120,
+    "y": 0,
+    "width": 500,
+    "height": 430,
+    "acrylicColor": [92, 170, 226, 0],
+    "blurColor": [92, 170, 226, 0],
+}
+
+assert 'features = ["tray-icon", "unstable"]' in cargo
+assert 'include_str!("../native-plate.json")' in lib
+assert 'WindowBuilder::new(app, "native-plate")' in lib
+assert ".parent_raw(main.hwnd()?)" in lib
+assert ".position(config.x, config.y)" in lib
+assert ".inner_size(config.width, config.height)" in lib
+assert ".always_on_bottom(true)" in lib
+assert "plate.set_ignore_cursor_events(true)" in lib
+assert '"acrylic" => Effect::Acrylic' in lib
+assert '"blur" => Effect::Blur' in lib
+assert "set_native_plate" in lib
+assert "generate_handler![set_native_plate]" in lib
 
 assert "background: transparent" in css
 assert "grid-template-columns: repeat(5, minmax(0, 1fr))" in css
 assert 'data-profile="edge"' in css
 assert 'data-profile="tint"' in css
 assert 'data-profile="frost"' in css
-assert 'data-profile="split"' in css
 assert "backdrop-filter: blur(4px)" in css
-assert "backdrop-filter: blur(14px)" in css
-assert "mask-image: linear-gradient" in css
-assert "left: 22%" in css
-assert "rgba(255, 248, 240, .19)" in css
 assert "window_region" not in lib
 assert "SetWindowRgn" not in lib
-assert "tauri_plugin" not in lib
 assert "WGC" not in js and "D3D11" not in js
 
 print("Tauri ten-mode glass transparency ladder: PASS")
-print("Pure / Edge / Tint / Frost CSS isolation: PASS")
-print("Acrylic alpha 0 / 12 / 78 comparison contract: PASS")
-print("Split Acrylic / Split Clear reference isolation: PASS")
+print("Whole-window Acrylic alpha 0 / 12 / 78 isolation: PASS")
+print("Native Acrylic / Blur child-HWND plate contract: PASS")
