@@ -8,6 +8,7 @@ const closeButton = document.querySelector('#closeButton');
 const modeButtons = [...document.querySelectorAll('[data-mode]')];
 
 let appWindow;
+let tauriCore;
 let config;
 let applying = false;
 
@@ -21,13 +22,19 @@ function setStatus(mode, state, message) {
   const spec = config?.modes?.[mode];
   document.documentElement.dataset.mode = mode;
   document.documentElement.dataset.profile = spec?.cssProfile ?? 'pure';
+  document.documentElement.dataset.nativePlate = spec?.nativePlate ?? 'off';
   currentMode.textContent = spec?.label ?? mode;
   apiStatus.textContent = state;
   apiStatus.dataset.state = state === 'OK' ? 'ok' : state === 'ERROR' ? 'error' : 'pending';
-  cssProfile.textContent = spec?.cssProfile ?? '—';
+  cssProfile.textContent = spec?.nativePlate ? `edge + ${spec.nativePlate} plate` : (spec?.cssProfile ?? '—');
   tintAlpha.textContent = Array.isArray(spec?.color) ? String(spec.color[3]) : '—';
   modeTitle.textContent = spec?.label ?? mode;
   modeDescription.textContent = message;
+}
+
+async function setNativePlate(kind) {
+  if (!tauriCore) throw new Error('window.__TAURI__.core 不可用');
+  await tauriCore.invoke('set_native_plate', { kind });
 }
 
 async function applyMode(mode) {
@@ -39,12 +46,20 @@ async function applyMode(mode) {
   setStatus(mode, 'APPLYING', '正在切换窗口效果…');
 
   try {
+    // Hide the child HWND before changing the main-window effect so no previous
+    // native backdrop contaminates the next comparison mode.
+    await setNativePlate(null);
+
     if (spec.effect === null) {
       await appWindow.clearEffects();
     } else {
       const effects = { effects: [spec.effect] };
       if (Array.isArray(spec.color)) effects.color = spec.color;
       await appWindow.setEffects(effects);
+    }
+
+    if (spec.nativePlate) {
+      await setNativePlate(spec.nativePlate);
     }
 
     setStatus(mode, 'OK', spec.description);
@@ -67,8 +82,9 @@ async function bootstrap() {
     config = await response.json();
 
     const tauriWindow = window.__TAURI__?.window;
-    if (!tauriWindow) {
-      throw new Error('window.__TAURI__.window 不可用');
+    tauriCore = window.__TAURI__?.core;
+    if (!tauriWindow || !tauriCore) {
+      throw new Error('window.__TAURI__.window/core 不可用');
     }
 
     appWindow = tauriWindow.getCurrentWindow();
