@@ -24,8 +24,8 @@ The current version is built with **Tauri 2 + Rust + Vanilla JavaScript/CSS** an
 
 <table>
 <tr>
-<td><img src="./docs/images/shijian-light.jpg" alt="Shijian light-mode release preview" width="100%"></td>
-<td><img src="./docs/images/shijian-dark.jpg" alt="Shijian dark-mode release preview" width="100%"></td>
+<td><img src="./docs/images/shijian-light.webp" alt="Shijian light-mode real app screenshot" width="100%"></td>
+<td><img src="./docs/images/shijian-dark.webp" alt="Shijian dark-mode real app screenshot" width="100%"></td>
 </tr>
 <tr>
 <td align="center">Light mode</td>
@@ -33,7 +33,7 @@ The current version is built with **Tauri 2 + Rust + Vanilla JavaScript/CSS** an
 </tr>
 </table>
 
-> These images are sandbox-rendered release previews based on the current UI, design rules and feature set. The actual Windows build is the source of truth for the final released interface.
+> These are screenshots from the running app. Local draft titles and body text that could contain personal information have been removed.
 
 ## Installation
 
@@ -111,7 +111,7 @@ Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before contributing.
 ## Roadmap
 
 - [ ] Publish the first downloadable Windows `v0.1.0`
-- [x] Add light / dark release preview images
+- [x] Add real light / dark app screenshots with local content redacted
 - [ ] Improve search and multi-draft interactions
 - [ ] Expand automated test coverage
 - [ ] Iterate based on real user feedback
