@@ -1,18 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "拾笺主窗口权限",
+  "description": "Tauri glass effects test window permissions",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
-    "core:window:allow-set-size",
-    "core:window:allow-set-position",
-    "core:window:allow-set-always-on-top",
+    "core:window:allow-set-effects",
     "core:window:allow-start-dragging",
-    "core:window:allow-hide",
-    "core:window:allow-show",
-    "core:window:allow-is-visible"
+    "core:window:allow-close"
   ]
 }

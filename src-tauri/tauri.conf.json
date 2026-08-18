@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "shijian",
+  "productName": "shijian-glass-test",
   "version": "0.1.0",
-  "identifier": "com.shijian.app",
+  "identifier": "com.shijian.glass-test",
   "build": {
     "frontendDist": "../src"
   },
@@ -11,14 +11,16 @@
     "windows": [
       {
         "label": "main",
-        "title": "拾笺",
-        "width": 720,
-        "height": 480,
-        "visible": false,
+        "title": "Tauri Glass Test",
+        "width": 520,
+        "height": 360,
+        "center": true,
+        "visible": true,
         "decorations": false,
         "transparent": true,
         "shadow": false,
         "backgroundColor": "#00000000",
+        "noRedirectionBitmap": true,
         "resizable": false,
         "alwaysOnTop": false
       }

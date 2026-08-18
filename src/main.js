@@ -1,21 +1,92 @@
-/* Bootstrap the original application logic, then install the resize
-   synchronization layer. Kept as a tiny loader so the core file stays intact. */
-(() => {
-  const loadSequentially = () => {
-    const core = document.createElement('script');
-    core.src = 'main-core.js';
-    core.onload = () => {
-      const fixes = document.createElement('script');
-      fixes.src = 'resize-fixes.js';
-      document.body.appendChild(fixes);
-    };
-    document.body.appendChild(core);
-  };
+const modeTitle = document.querySelector('#modeTitle');
+const modeDescription = document.querySelector('#modeDescription');
+const currentMode = document.querySelector('#currentMode');
+const apiStatus = document.querySelector('#apiStatus');
+const closeButton = document.querySelector('#closeButton');
+const modeButtons = [...document.querySelectorAll('[data-mode]')];
 
-  if (document.readyState === 'loading') {
-    document.write('<script src="main-core.js"><\/script>');
-    document.write('<script src="resize-fixes.js"><\/script>');
-  } else {
-    loadSequentially();
+let appWindow;
+let config;
+let applying = false;
+
+function setActiveButton(mode) {
+  for (const button of modeButtons) {
+    button.classList.toggle('active', button.dataset.mode === mode);
   }
-})();
+}
+
+function setStatus(mode, state, message) {
+  document.documentElement.dataset.mode = mode;
+  currentMode.textContent = config?.modes?.[mode]?.label ?? mode;
+  apiStatus.textContent = state;
+  apiStatus.dataset.state = state === 'OK' ? 'ok' : state === 'ERROR' ? 'error' : 'pending';
+  modeTitle.textContent = config?.modes?.[mode]?.label ?? mode;
+  modeDescription.textContent = message;
+}
+
+async function applyMode(mode) {
+  if (applying || !appWindow || !config?.modes?.[mode]) return;
+
+  applying = true;
+  const spec = config.modes[mode];
+  setActiveButton(mode);
+  setStatus(mode, 'APPLYING', '正在切换窗口效果…');
+
+  try {
+    if (spec.effect === null) {
+      await appWindow.clearEffects();
+    } else {
+      await appWindow.setEffects({
+        effects: [spec.effect],
+        color: config.effectColor,
+      });
+    }
+
+    setStatus(mode, 'OK', spec.description);
+  } catch (error) {
+    console.error(`failed to apply ${mode}`, error);
+    setStatus(
+      mode,
+      'ERROR',
+      `${spec.description} 当前系统调用失败：${String(error)}`,
+    );
+  } finally {
+    applying = false;
+  }
+}
+
+async function bootstrap() {
+  try {
+    const response = await fetch('./glass-test-config.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`config HTTP ${response.status}`);
+    config = await response.json();
+
+    const tauriWindow = window.__TAURI__?.window;
+    if (!tauriWindow) {
+      throw new Error('window.__TAURI__.window 不可用');
+    }
+
+    appWindow = tauriWindow.getCurrentWindow();
+
+    for (const button of modeButtons) {
+      button.addEventListener('click', () => applyMode(button.dataset.mode));
+    }
+
+    closeButton.addEventListener('click', () => appWindow.close());
+
+    window.addEventListener('keydown', (event) => {
+      const mode = config.shortcuts?.[event.key];
+      if (mode) applyMode(mode);
+    });
+
+    await applyMode(config.initialMode);
+  } catch (error) {
+    console.error('glass test bootstrap failed', error);
+    currentMode.textContent = '不可用';
+    apiStatus.textContent = 'ERROR';
+    apiStatus.dataset.state = 'error';
+    modeDescription.textContent = `初始化失败：${String(error)}`;
+  }
+}
+
+bootstrap();

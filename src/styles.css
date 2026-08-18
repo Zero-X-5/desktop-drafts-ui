@@ -1,3 +1,245 @@
-/* Core visual design followed by window-resize stabilization overrides. */
-@import url("./styles-core.css");
-@import url("./performance-fixes.css");
+:root {
+  color-scheme: dark;
+  font-family: "Inter Variable", Inter, system-ui, -apple-system, sans-serif;
+  --glass: rgba(27, 30, 38, .34);
+  --glass-strong: rgba(29, 32, 41, .52);
+  --surface: rgba(23, 26, 34, .46);
+  --surface-hover: rgba(255, 255, 255, .07);
+  --text: #e8e9ef;
+  --text-secondary: #9b9da8;
+  --line: rgba(255, 255, 255, .10);
+  --accent: #6c8fff;
+  --success: #79d89a;
+  --danger: #ff7d86;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  color: var(--text);
+  user-select: none;
+}
+
+button {
+  font: inherit;
+}
+
+.test-window {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 44px auto auto auto 1fr;
+  gap: 14px;
+  padding: 0 18px 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .018)), var(--glass);
+}
+
+html[data-mode="transparent"] .test-window {
+  background: linear-gradient(145deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .012)), rgba(27, 30, 38, .24);
+}
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin: 0 -8px;
+}
+
+.drag-zone {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 8px;
+  cursor: default;
+}
+
+.drag-zone > div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.drag-zone strong {
+  font-size: 12px;
+  font-weight: 590;
+  line-height: 1.2;
+}
+
+.drag-zone span:not(.brand-dot) {
+  color: var(--text-secondary);
+  font-size: 9.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 16px rgba(108, 143, 255, .65);
+}
+
+.window-button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.window-button:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.hero {
+  padding: 12px 4px 0;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: .12em;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -.03em;
+}
+
+.description {
+  min-height: 34px;
+  margin: 7px 0 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.mode-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.mode-button {
+  min-width: 0;
+  height: 58px;
+  display: grid;
+  place-content: center;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 100ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.mode-button:hover {
+  background: var(--surface-hover);
+}
+
+.mode-button:active {
+  transform: scale(.97);
+}
+
+.mode-button.active {
+  border-color: rgba(108, 143, 255, .58);
+  background: rgba(108, 143, 255, .15);
+}
+
+.mode-button strong {
+  font-size: 12px;
+  font-weight: 590;
+}
+
+.mode-button span {
+  color: var(--text-secondary);
+  font-size: 9.5px;
+}
+
+.status-card {
+  display: grid;
+  grid-template-columns: .9fr .8fr 1.3fr;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .035);
+}
+
+.status-card > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 11px 12px;
+  background: rgba(12, 14, 19, .17);
+}
+
+.status-card span {
+  color: var(--text-secondary);
+  font-size: 9.5px;
+}
+
+.status-card strong {
+  overflow: hidden;
+  font-size: 10.5px;
+  font-weight: 590;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#apiStatus[data-state="ok"] {
+  color: var(--success);
+}
+
+#apiStatus[data-state="error"] {
+  color: var(--danger);
+}
+
+#apiStatus[data-state="pending"] {
+  color: var(--accent);
+}
+
+footer {
+  align-self: end;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 4px;
+  color: var(--text-secondary);
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.shortcut {
+  text-align: right;
+  white-space: nowrap;
+}

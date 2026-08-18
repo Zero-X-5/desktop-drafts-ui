@@ -1,103 +1,90 @@
-# CODEMAP — 拾笺 (shijian)
+# CODEMAP — Tauri Glass Effects Test
 
-## 项目结构
+## 当前分支
+
+`agent/tauri-glass-effects-test`
+
+这是从 `main@b442e56d` 新开的独立 Tauri 2 Windows 材质实验分支。目标仅是比较 Acrylic / Blur / 普通透明三种窗口效果；不承载拾笺草稿业务，也不运行 Native Liquid Glass renderer。
+
+## 结构
+
 ```text
-shijian/
-├── AGENTS.md
-├── DESIGN.md
-├── STATUS.md
-├── CODEMAP.md
-├── src/
-│   ├── index.html
-│   ├── main.js                 前端加载入口
-│   ├── main-core.js            草稿业务、设置、事件与基础窗口交互
-│   ├── resize-fixes.js         固定画布 Region 状态协调层
-│   ├── styles.css              样式加载入口
-│   ├── styles-core.css         原始视觉样式与整体布局
-│   ├── performance-fixes.css   固定画布坐标与透明背景覆盖
-│   └── assets/
-└── src-tauri/
-    ├── src/lib.rs              后端命令、托盘、快捷键、文件监控
-    ├── src/window_region.rs    固定画布和 Windows 圆角 Region
-    ├── src/main.rs
-    ├── tauri.conf.json
-    ├── Cargo.toml
-    └── capabilities/
+src/
+├── index.html                  三态测试 UI + 自定义拖动区
+├── main.js                     Tauri window effect 切换逻辑
+├── styles.css                  透明测试窗口视觉
+└── glass-test-config.json      初始模式 / tint / 快捷键 / 模式说明
+
+src-tauri/
+├── tauri.conf.json             520×360 透明测试窗口
+├── capabilities/default.json   set-effects / drag / close 权限
+└── src/lib.rs                  最小 Tauri Builder，不启动产品 Region/托盘/快捷键/watcher
+
+verify_tauri_glass_test.py       静态契约
 ```
 
-## 架构概览
+## 窗口
 
-应用继续使用一个原生窗口、一个 WebView 和一个整体 DOM，但原生窗口不再随 UI 状态改变尺寸。
+- 单窗口、单 WebView。
+- 520×360 logical px。
+- `transparent: true`。
+- `decorations: false`。
+- `resizable: false`。
+- `shadow: false`。
+- `noRedirectionBitmap: true`，用于降低透明窗口创建阶段的白闪风险。
+- 顶部 `data-tauri-drag-region` 负责拖动。
 
-- HWND / WebView 固定为 720×480
-- 折叠状态只显示 248×36 圆角 Region
-- 目录状态只显示 248×480 圆角 Region
-- 预览状态显示完整 720×480 圆角 Region
-- 目录位于右侧布局时，窄 Region 从 x=0 开始
-- 目录位于左侧布局时，窄 Region 从 x=472 开始
-- 所有状态使用 14px 逻辑圆角，并按显示器 scale factor 转换为物理像素
+本实验明确不使用主线 `window_region.rs` 的固定 720×480 + `SetWindowRgn` 状态机，避免 Region 裁剪干扰系统 backdrop 对比。
 
-这不是旧的 1192px 轨道或多表面方案。固定画布中只有当前的 720px 单一 DOM，Region 只负责原生裁剪。
+## 三种模式
 
-## 前端 (`src/`)
+### Acrylic
 
-### `main.js`
-- 同步加载 `main-core.js`，随后加载 `resize-fixes.js`
-- 不承载业务逻辑
+```text
+appWindow.setEffects({
+  effects: ["acrylic"],
+  color: effectColor
+})
+```
 
-### `main-core.js`
-- 草稿 CRUD、自动保存、文件冲突、拖拽排序、设置、主题、透明模式
-- 托盘和全局快捷键事件对应的前端状态切换
-- `onMoved` 仍负责在靠近显示器边缘时请求左右换侧
-- 原始窗口函数会在加载结束后由 `resize-fixes.js` 覆盖
+Windows 10 / 11 系统 Acrylic。Win10 上重点观察拖动过程的性能和稳定性。
 
-### `resize-fixes.js`
-- 不再调用 `win.setSize`、`win.onResized` 或尺寸稳定计时器
-- 通过 `invoke('set_window_region', { state, side })` 切换原生 Region
-- 使用版本号和 Promise 队列串行化展开、折叠、预览开关、隐藏和恢复
-- 展开顺序：先修改 DOM → 等待两个渲染帧 → 扩大 Region
-- 收起顺序：先缩小 Region → 再移除 DOM 内容
-- 左右换侧：移动固定画布 472 逻辑像素，并同步 `preview-left` / `preview-right` 和窄 Region
-- 预览打开后按当前显示器工作区夹紧固定 720px 画布位置
+### Blur
 
-### `performance-fixes.css`
-- `html/body` 固定为 720×480 且背景永久透明
-- 折叠壳层 248×36、目录壳层 248×480、预览壳层 720×480
-- 非预览的左侧目录布局将 `.app-window` 放在 x=472
-- 所有状态统一 14px 圆角
-- 禁用旧 `.app-window::after` / `#resizeMask`
-- 不再使用不透明 body 背景遮盖整个透明 HWND
-- 取消宽度、高度和圆角动画，只保留背景颜色过渡
+```text
+appWindow.setEffects({
+  effects: ["blur"],
+  color: effectColor
+})
+```
 
-## 后端 (`src-tauri/`)
+使用与 Acrylic 相同的 tint 参数，便于比较系统模糊本身的差异。
 
-### `src/window_region.rs`
-- `ensure_fixed_canvas()`：确保原生窗口为 720×480 逻辑像素
-- `region_geometry()`：计算 collapsed / expanded / preview 的逻辑 Region
-- Windows 平台：
-  - 使用 `WebviewWindow::hwnd()` 获取 HWND
-  - 使用 `scale_factor()` 将逻辑坐标转换为物理坐标
-  - 通过 `CreateRoundRectRgn` 创建圆角 Region
-  - 通过 `SetWindowRgn` 原子替换窗口可见区域
-  - 成功后 Region handle 所有权交给 Windows；失败时主动释放
-- 非 Windows 平台：校验状态参数后 no-op
+### Transparent
 
-### `src/lib.rs`
-- 注册 `set_window_region` 命令
-- 启动时恢复 always-on-top 设置
-- 确保 720×480 固定画布
-- 在窗口显示前应用 collapsed/right 初始 Region
-- 其他命令：`get_store_dir`, `list_drafts`, `read_draft`, `write_draft`, `delete_to_recycle`, `open_folder`, `get_settings`, `set_settings`, `set_autostart`, `set_hotkey`
+```text
+appWindow.clearEffects()
+```
 
-### `tauri.conf.json`
-- 主窗口尺寸固定为 720×480
-- `visible: false`，防止 Region 设置前出现完整矩形窗口
-- 继续使用透明、无装饰、无阴影、不可调整大小的单窗口
+清除系统 backdrop，只剩 WebView 自身的半透明 CSS，是性能和视觉基准。
 
-## 关键决策
-- 禁止恢复运行时原生 `setSize` 状态切换
-- 禁止用不透明 body 背景或全 HWND 矩形遮罩掩盖过渡
-- Region 必须在展开时最后扩大、收起时最先缩小
-- 保持单窗口、单 WebView、单 DOM；不拆分目录和预览窗口
-- 若调整尺寸或圆角，必须同时更新 Rust Region 常量和 CSS 固定画布变量
-- Windows 实机测试必须覆盖多 DPI、双显示器和左右换侧
+## 配置
+
+`src/glass-test-config.json` 保存：
+
+- `initialMode`
+- `effectColor`
+- 1 / 2 / 3 快捷键映射
+- 三种模式的 effect 名称和说明
+
+运行时可调参数不只存在于源码常量中。
+
+## 验证
+
+```powershell
+python verify_tauri_glass_test.py
+cargo check --manifest-path src-tauri/Cargo.toml
+npm run tauri build
+```
+
+前两项用于静态/编译契约，最终 Acrylic / Blur 的拖动表现必须在 Windows 真机观察。

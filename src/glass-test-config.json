@@ -1,0 +1,26 @@
+{
+  "initialMode": "acrylic",
+  "effectColor": [24, 26, 32, 92],
+  "shortcuts": {
+    "1": "acrylic",
+    "2": "blur",
+    "3": "transparent"
+  },
+  "modes": {
+    "acrylic": {
+      "label": "Acrylic",
+      "effect": "acrylic",
+      "description": "Windows Acrylic：系统背景模糊 + tint。重点观察 Win10 拖动时是否掉帧或闪烁。"
+    },
+    "blur": {
+      "label": "Blur",
+      "effect": "blur",
+      "description": "Windows Blur：更轻的系统背景模糊。与 Acrylic 使用同一 tint 参数便于直接比较。"
+    },
+    "transparent": {
+      "label": "Transparent",
+      "effect": null,
+      "description": "普通透明：调用 clearEffects()，只保留 WebView 自身的半透明 CSS，不使用系统背景模糊。"
+    }
+  }
+}
