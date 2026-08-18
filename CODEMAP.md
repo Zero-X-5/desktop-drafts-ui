@@ -4,182 +4,142 @@
 
 `agent/tauri-glass-effects-test`
 
-这是从 `main@b442e56d` 新开的独立 Tauri 2 Windows 材质实验分支。当前目标是拆开比较四层来源：
+这是从 `main@b442e56d` 新开的独立 Tauri 2 Windows 材质实验分支。当前目标是拆开比较：
 
-1. WebView2 / Tauri 透明窗口本身；
-2. CSS 边缘、tint、backdrop blur；
-3. Windows Acrylic / Blur 系统 backdrop；
-4. “统一系统 backdrop + 局部更厚表面层”的参考图式分区材质。
+1. Tauri/WebView2 真实透明；
+2. CSS edge/tint/frost；
+3. 整窗 Windows Acrylic / Blur；
+4. **透明主窗口 + 右侧局部原生 Acrylic/Blur plate**。
 
-不承载草稿业务，也不运行 Native Liquid Glass renderer。
+不承载草稿业务，也不运行 WGC / D3D11 Liquid Glass renderer。
 
 ## 结构
 
 ```text
 src/
-├── index.html                  10 态透明度/分区材质 UI + 自定义拖动区
-├── main.js                     window effect 切换 + cssProfile/tint 诊断
-├── styles.css                  Pure / Edge / Tint / Frost / Split 五套 CSS profile
-└── glass-test-config.json      10 个模式、逐模式 effect/color/cssProfile、0~9 快捷键
+├── index.html                  10 态透明度/局部 backdrop 对照 UI
+├── main.js                     主窗口 effect + native plate invoke 切换
+├── styles.css                  Pure / Edge / Tint / Frost（旧 split CSS 已无活动模式引用）
+└── glass-test-config.json      0~9 模式与 nativePlate 标记
 
 src-tauri/
-├── tauri.conf.json             620×430 透明测试窗口
-├── capabilities/default.json   set-effects / drag / close 权限
-└── src/lib.rs                  最小 Tauri Builder，不启动产品 Region/托盘/快捷键/watcher
+├── tauri.conf.json             620×430 透明主 WebViewWindow
+├── native-plate.json           右侧 child HWND 几何与 Acrylic/Blur tint
+├── capabilities/default.json   主窗口 set-effects / drag / close 权限
+└── src/lib.rs                  创建/控制无 WebView 的 native-plate Window
 
-verify_tauri_glass_test.py       10 态静态契约
+verify_tauri_glass_test.py       主窗口 + child-HWND plate 静态契约
 ```
 
-## 窗口
+## 主窗口
 
-- 单窗口、单 WebView。
 - 620×430 logical px。
+- 单 WebView。
 - `transparent: true`。
 - `decorations: false`。
 - `resizable: false`。
 - `shadow: false`。
+- `backgroundColor: #00000000`。
 - `noRedirectionBitmap: true`。
 - 顶部 `data-tauri-drag-region` 负责拖动。
-- 不使用主线 `window_region.rs` / `SetWindowRgn`。
 
-## 1–8 基础梯度
+## Native plate
 
-### 1. Pure
-
-```text
-clearEffects()
-cssProfile = pure
-```
-
-几乎不画大面积背景，只保留必要内容和极弱控件底。它是真实透明基准。
-
-### 2. Edge Glass
+`src-tauri/native-plate.json`：
 
 ```text
-clearEffects()
-cssProfile = edge
+x      = 120
+y      = 0
+width  = 500
+height = 430
+Acrylic color = [92,170,226,0]
+Blur color    = [92,170,226,0]
 ```
 
-不铺大面积 tint，只加 1px 亮边、inset highlight 和轻微 sheen。
-
-### 3. Tint Glass
+Windows setup 阶段：
 
 ```text
-clearEffects()
-cssProfile = tint
+main WebviewWindow HWND
+        ↓ parent_raw
+native-plate Window
+  ├─ 无 WebView
+  ├─ transparent
+  ├─ decorations=false
+  ├─ shadow=false
+  ├─ focusable=false
+  ├─ skip_taskbar=true
+  ├─ always_on_bottom=true
+  ├─ ignore_cursor_events=true
+  └─ 初始 hidden
 ```
 
-在 Edge 基础上增加很薄的蓝白 tint。
+plate 是 main 的 child HWND，因此随主窗口一起移动，不需要 JS 每帧同步坐标。它只覆盖 x=120 之后的右侧区域。
 
-### 4. CSS Frost
+## Rust bridge
+
+`src-tauri/src/lib.rs`：
+
+- `setup_native_plate()` 在 Tauri setup hook 创建 child Window。
+- `set_native_plate(kind)` 是唯一新增 command。
+- `kind = null`：隐藏 plate。
+- `kind = acrylic`：plate 使用 `Effect::Acrylic` 后显示。
+- `kind = blur`：plate 使用 `Effect::Blur` 后显示。
+- effect color 来自 `native-plate.json`。
+- 非 Windows 平台只允许关闭 plate；启用时返回 Windows-only 错误。
+
+纯 WindowBuilder 需要 Tauri `unstable` feature，因此 `Cargo.toml` 为：
 
 ```text
-clearEffects()
-cssProfile = frost
-backdrop-filter: blur(4px)
+tauri = { version = "2", features = ["tray-icon", "unstable"] }
 ```
 
-验证 WebView2 CSS `backdrop-filter` 是否能实际影响桌面背景。
-
-### 5. Acrylic α0
-
-```text
-setEffects({
-  effects: ["acrylic"],
-  color: [92, 170, 226, 0]
-})
-cssProfile = edge
-```
-
-若 tint alpha 已为 0 仍明显模糊/不透，说明主要来源是 Acrylic 自身的 blur/luminosity，而不是 tint。
-
-### 6. Acrylic α12
-
-与 α0 相同，但 tint alpha = 12。
-
-### 7. Acrylic α78
-
-之前使用的标准 Acrylic 对照，tint alpha = 78。
-
-### 8. Blur α0
-
-```text
-setEffects({
-  effects: ["blur"],
-  color: [92, 170, 226, 0]
-})
-cssProfile = edge
-```
-
-与 Acrylic α0 比较系统 Blur 与 Acrylic 的差异。
-
-## 9 / 0 参考图式 Split 实验
-
-两档都使用同一个 `cssProfile = split`。Split profile 不改变左侧 Edge Glass 基线，而是在右侧叠加一个带软 mask 的局部层：
-
-```text
-left ~ clear edge glass
-        ↓ smooth transition
-right local layer
-  ├─ backdrop-filter: blur(14px)
-  ├─ saturate(1.12)
-  ├─ brightness(1.055)
-  ├─ warm-white luminosity/tint gradient
-  └─ mask gradient: transparent → full
-```
-
-`material-card` 内部右侧还额外叠一层 8px 局部 frost，使大色块保留而高频细节更快消失。
-
-### 9. Split Acrylic
-
-```text
-setEffects({
-  effects: ["acrylic"],
-  color: [92, 170, 226, 0]
-})
-cssProfile = split
-```
-
-用途：模拟参考图“左边仍通透、右边更磨砂”的材质层次。底层统一使用 Acrylic α0，右侧磨砂增强由局部 CSS surface 完成。
-
-### 0. Split Clear
-
-```text
-clearEffects()
-cssProfile = split
-```
-
-与 Split Acrylic 使用完全相同的 CSS。二者只差底层有没有 Windows Acrylic，因此可以直接判断参考图式效果到底依赖系统 Acrylic 多少。
-
-## CSS profile 隔离原则
-
-```text
-pure  → 几乎无面层
-edge  → 只画边与高光
-tint  → edge + 极薄面色
-frost → tint + 4px CSS backdrop blur
-split → edge + 右侧 14px 局部 frost/luminosity 渐变
-```
-
-Acrylic α0 / α12 / α78 / Blur α0 仍全部复用 `edge`，不会被 Split profile 污染。
+没有增加 Windows App SDK、WinUI 3、Win2D、WGC、D3D11 或 shader 依赖。
 
 ## 前端切换
 
-`main.js`：
+每次切换模式，`main.js` 固定执行：
 
-- `effect === null` → `clearEffects()`；
-- 有 system effect → `setEffects()`；
-- 每个模式从 JSON 读取自己的 `color`；
-- `document.documentElement.dataset.profile` 驱动 CSS profile；
-- UI 同时显示 CSS profile 和 tint alpha。
+```text
+1. invoke set_native_plate(null)
+2. 切换主窗口 clearEffects / setEffects
+3. 若模式声明 nativePlate，再显示对应 child HWND
+```
 
-快捷键 `1` 到 `9` 对应前九个模式，`0` 对应 Split Clear。
+这样旧 plate 不会污染其它比较模式。
 
-## Native Desktop Acrylic Thin 边界
+## 10 个模式
 
-微软 Windows App SDK 的真正 `DesktopAcrylicKind::Thin` 属于 `DesktopAcrylicController`，还需要 Windows App SDK runtime/bootstrap、DispatcherQueue、Composition target，并非 Tauri 当前 `setEffects()` 的一个隐藏参数。当前分支没有为了单次视觉实验引入这一整套运行时。
+```text
+1 Pure             主窗口 clear
+2 Edge Glass       clear + CSS edge
+3 Tint Glass       clear + CSS thin tint
+4 CSS Frost        clear + CSS backdrop blur 4px
+5 Acrylic α0       整窗 Acrylic
+6 Acrylic α12      整窗 Acrylic
+7 Acrylic α78      整窗 Acrylic
+8 Blur α0          整窗 Blur
+9 Native Acrylic   主窗口 clear + 右侧 Acrylic child HWND
+0 Native Blur      主窗口 clear + 右侧 Blur child HWND
+```
 
-因此本轮先验证“系统 Acrylic α0 + 局部 surface 分层”是否已经能接近参考图。如果 9 明显优于 0 且仍不够通透，再单独开 Native Thin bridge 阶段。
+关键比较：
+
+```text
+1 vs 9
+→ Acrylic plate 是否只影响右侧，而左侧保持 Pure 清晰度
+
+9 vs 0
+→ 右侧 Acrylic 与 Blur 哪个更接近参考图
+
+5 vs 9
+→ 整窗 Acrylic 与局部 Acrylic 的透明度差异
+```
+
+## 技术边界
+
+微软 `Windows.UI.Composition.Compositor.CreateHostBackdropBrush()` 可以从“窗口绘制前”的宿主背景采样，适用于局部 Visual；但真正 frosted glass 还需要 EffectBrush/Gaussian blur 图形效果。当前阶段先复用 Tauri 已有 Windows Acrylic/Blur effect，把它限制到一个独立 child HWND 上，验证局部系统 backdrop 架构是否成立。
+
+如果 child HWND 上的 Tauri Acrylic 在目标 Win10 上不可用或合成层级不正确，再进入下一阶段：Windows.UI.Composition HostBackdropBrush / Windows App SDK DesktopAcrylicController。当前阶段不提前引入这些依赖。
 
 ## 验证
 
@@ -189,4 +149,4 @@ cargo check --manifest-path src-tauri/Cargo.toml
 npm run tauri build
 ```
 
-静态契约检查窗口配置、10 个模式、Acrylic α0/12/78、Blur α0、五套 CSS profile、Split Acrylic/Split Clear 隔离，并继续禁止 WGC / D3D11 / window_region 回流到实验路径。最终透明度和系统 backdrop 行为必须在 Windows 真机验证。
+静态契约锁住：主窗口透明配置、10 个模式、Acrylic α0/12/78、native-plate 几何、child HWND、ignore cursor、always-on-bottom、Acrylic/Blur effect 和前端 invoke 时序。最终 child HWND 的 Acrylic/Blur 真机表现必须在 Windows 上确认。
