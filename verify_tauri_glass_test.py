@@ -12,7 +12,7 @@ lib = (root / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
 
 window = tauri["app"]["windows"][0]
 assert window["label"] == "main"
-assert window["width"] == 520 and window["height"] == 360
+assert window["width"] == 620 and window["height"] == 430
 assert window["transparent"] is True
 assert window["decorations"] is False
 assert window["resizable"] is False
@@ -24,48 +24,76 @@ assert "core:window:allow-set-effects" in cap["permissions"]
 assert "core:window:allow-start-dragging" in cap["permissions"]
 assert "core:window:allow-close" in cap["permissions"]
 
-for mode in ("crystal", "thin-acrylic", "acrylic", "blur"):
+modes = (
+    "pure",
+    "edge",
+    "tint",
+    "frost",
+    "acrylic-0",
+    "acrylic-12",
+    "acrylic-78",
+    "blur-0",
+)
+for mode in modes:
     assert f'data-mode="{mode}"' in index
-assert "Crystal Glass Test" in index
+
+assert "Glass Transparency Lab" in index
 assert "data-tauri-drag-region" in index
-assert "material-card" in index
-assert "glass-sheen-a" in index and "glass-sheen-b" in index
+assert "cssProfile" in index
+assert "tintAlpha" in index
 
 assert "window.__TAURI__?.window" in js
 assert "getCurrentWindow()" in js
 assert "appWindow.setEffects" in js
 assert "appWindow.clearEffects" in js
+assert "dataset.profile" in js
+assert "spec?.cssProfile" in js
+assert "Array.isArray(spec?.color)" in js
 assert "Array.isArray(spec.color)" in js
 assert "effects.color = spec.color" in js
-assert "glass-test-config.json" in js
 
-assert config["initialMode"] == "crystal"
+assert config["initialMode"] == "pure"
 assert config["shortcuts"] == {
-    "1": "crystal",
-    "2": "thin-acrylic",
-    "3": "acrylic",
-    "4": "blur",
+    "1": "pure",
+    "2": "edge",
+    "3": "tint",
+    "4": "frost",
+    "5": "acrylic-0",
+    "6": "acrylic-12",
+    "7": "acrylic-78",
+    "8": "blur-0",
 }
-assert config["modes"]["crystal"]["effect"] is None
-assert config["modes"]["crystal"]["color"] is None
-assert config["modes"]["thin-acrylic"]["effect"] == "acrylic"
-assert config["modes"]["thin-acrylic"]["color"] == [92, 170, 226, 12]
-assert config["modes"]["acrylic"]["effect"] == "acrylic"
-assert config["modes"]["acrylic"]["color"] == [92, 170, 226, 78]
-assert config["modes"]["blur"]["effect"] == "blur"
-assert config["modes"]["blur"]["color"] == [92, 170, 226, 78]
+
+for mode in ("pure", "edge", "tint", "frost"):
+    assert config["modes"][mode]["effect"] is None
+    assert config["modes"][mode]["color"] is None
+
+assert config["modes"]["pure"]["cssProfile"] == "pure"
+assert config["modes"]["edge"]["cssProfile"] == "edge"
+assert config["modes"]["tint"]["cssProfile"] == "tint"
+assert config["modes"]["frost"]["cssProfile"] == "frost"
+
+assert config["modes"]["acrylic-0"]["effect"] == "acrylic"
+assert config["modes"]["acrylic-0"]["color"] == [92, 170, 226, 0]
+assert config["modes"]["acrylic-12"]["color"] == [92, 170, 226, 12]
+assert config["modes"]["acrylic-78"]["color"] == [92, 170, 226, 78]
+assert config["modes"]["blur-0"]["effect"] == "blur"
+assert config["modes"]["blur-0"]["color"] == [92, 170, 226, 0]
+for mode in ("acrylic-0", "acrylic-12", "acrylic-78", "blur-0"):
+    assert config["modes"][mode]["cssProfile"] == "edge"
 
 assert "background: transparent" in css
 assert "grid-template-columns: repeat(4, minmax(0, 1fr))" in css
-assert "border-radius: 28px" in css
-assert "rgba(80, 154, 207, .030)" in css
-assert "rgba(235, 248, 255, .045)" in css
-assert css.count("backdrop-filter: none") >= 4
-assert "blur(14px)" not in css
+assert 'data-profile="edge"' in css
+assert 'data-profile="tint"' in css
+assert 'data-profile="frost"' in css
+assert "backdrop-filter: blur(4px)" in css
+assert "rgba(255, 255, 255, .010)" in css
 assert "window_region" not in lib
 assert "SetWindowRgn" not in lib
 assert "tauri_plugin" not in lib
 assert "WGC" not in js and "D3D11" not in js
 
-print("Tauri four-mode glass effects static validation: PASS")
-print("Crystal clear-glass visual contract: PASS")
+print("Tauri eight-mode glass transparency ladder: PASS")
+print("Pure / Edge / Tint / Frost CSS isolation: PASS")
+print("Acrylic alpha 0 / 12 / 78 comparison contract: PASS")
