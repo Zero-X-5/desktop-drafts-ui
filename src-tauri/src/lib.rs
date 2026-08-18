@@ -12,13 +12,16 @@ struct NativePlateConfig {
     blur_color: [u8; 4],
 }
 
-fn native_plate_config() -> Result<NativePlateConfig, String> {
+fn native_plate_config() -> Result<NativePlateConfig, serde_json::Error> {
     serde_json::from_str(include_str!("../native-plate.json"))
-        .map_err(|error| format!("invalid native-plate.json: {error}"))
 }
 
 #[cfg(target_os = "windows")]
-fn effect_config(kind: &str, color: [u8; 4]) -> Result<tauri::utils::config::WindowEffectsConfig, String> {
+fn apply_native_plate_effect(
+    plate: &tauri::Window,
+    kind: &str,
+    color: [u8; 4],
+) -> Result<(), String> {
     use tauri::window::{Color, Effect, EffectsBuilder};
 
     let effect = match kind {
@@ -27,10 +30,14 @@ fn effect_config(kind: &str, color: [u8; 4]) -> Result<tauri::utils::config::Win
         other => return Err(format!("unsupported native plate effect: {other}")),
     };
 
-    Ok(EffectsBuilder::new()
-        .effect(effect)
-        .color(Color(color[0], color[1], color[2], color[3]))
-        .build())
+    plate
+        .set_effects(
+            EffectsBuilder::new()
+                .effect(effect)
+                .color(Color(color[0], color[1], color[2], color[3]))
+                .build(),
+        )
+        .map_err(|error| error.to_string())
 }
 
 #[cfg(target_os = "windows")]
@@ -77,16 +84,14 @@ fn set_native_plate(app: tauri::AppHandle, kind: Option<String>) -> Result<(), S
         return Ok(());
     };
 
-    let config = native_plate_config()?;
+    let config = native_plate_config().map_err(|error| error.to_string())?;
     let color = match kind.as_str() {
         "acrylic" => config.acrylic_color,
         "blur" => config.blur_color,
         other => return Err(format!("unsupported native plate effect: {other}")),
     };
 
-    plate
-        .set_effects(effect_config(&kind, color)?)
-        .map_err(|error| error.to_string())?;
+    apply_native_plate_effect(&plate, &kind, color)?;
     plate
         .set_always_on_bottom(true)
         .map_err(|error| error.to_string())?;
